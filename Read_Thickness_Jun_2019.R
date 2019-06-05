@@ -206,35 +206,62 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
     if (denoise_type==1) {
         Thickness <- na.omit(Thickness[,1:987])
         Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
+        # 
+        Thickness <- waveslim::denoise.modwt.2d(Thickness)
+        Thickness <- waveslim::denoise.modwt.2d(Thickness)
         Thickness_max <- max(Thickness)
         Thickness <- EBImage::medianFilter(
-            Thickness/Thickness_max, size = exp(1)) * Thickness_max
+            Thickness/Thickness_max, size = 1) * Thickness_max
         Thickness_max <- max(Thickness)
         Thickness <- EBImage::medianFilter(
             Thickness/Thickness_max, size = pi) * Thickness_max
         rm(Thickness_max)
     }
     if (denoise_type==2) {
-        Thickness[rowMeans(Thickness, na.rm = T) < 
-                      mean(Thickness, na.rm = T),] <- NA
         Thickness <- na.omit(Thickness[,1:987])
+        threshold_row <- lowess(rowMeans(Thickness, na.rm = T), f = 1/2)$y - 
+            rowMeans(Thickness, na.rm = T) / 7
+        Thickness[rowMeans(Thickness, na.rm = T) < threshold_row, ] <- NA
+        Thickness <- na.omit(Thickness)
+        # 
+        threshold_row <- lowess(rowMeans(Thickness, na.rm = T), f = 1/3)$y - 
+            sd(rowMeans(Thickness, na.rm = T)) * 2
+        Thickness[rowMeans(Thickness, na.rm = T) < threshold_row, ] <- NA
+        Thickness <- na.omit(Thickness)
+        # 
+        Thickness <- rbind(
+            EBImage::resize(
+                Thickness[1:(NROW(Thickness)/3), ], 
+                w = NROW(Thickness)*2/5, h = 666),
+            EBImage::resize(
+                Thickness[(NROW(Thickness)/3+1):(NROW(Thickness)*2/3-1), ], 
+                w = 666 - NROW(Thickness)/2, h = 666),
+            EBImage::resize(
+                Thickness[(NROW(Thickness)*2/3):NROW(Thickness), ], 
+                w = NROW(Thickness)*2/5, h = 666)
+        )
         Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
-        Thickness <- waveslim::denoise.dwt.2d(Thickness)
+        #
+        Thickness <- waveslim::denoise.modwt.2d(Thickness)
+        Thickness <- waveslim::denoise.modwt.2d(Thickness)
         Thickness_max <- max(Thickness)
-        Thickness <- EBImage::medianFilter(Thickness/Thickness_max,
-                                           size = pi) * Thickness_max
-    }
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    if (denoise_type==3) {
-        Thickness[rowMeans(Thickness, na.rm = T) < 
-                      mean(Thickness, na.rm = T),] <- NA
-        Thickness <- na.omit(Thickness[,1:987])
-        Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
-        Thickness <- waveslim::denoise.dwt.2d(Thickness)
+        Thickness <- EBImage::medianFilter(
+            Thickness/Thickness_max, size = 1) * Thickness_max
         Thickness_max <- max(Thickness)
-        Thickness <- EBImage::medianFilter(Thickness/Thickness_max,
-                                           size = pi) * Thickness_max
+        Thickness <- EBImage::medianFilter(
+            Thickness/Thickness_max, size = pi) * Thickness_max
+        rm(Thickness_max)
     }
+    # if (denoise_type==2) {
+    #     Thickness[rowMeans(Thickness, na.rm = T) < 
+    #                   mean(Thickness, na.rm = T),] <- NA
+    #     Thickness <- na.omit(Thickness[,1:987])
+    #     Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
+    #     Thickness <- waveslim::denoise.dwt.2d(Thickness)
+    #     Thickness_max <- max(Thickness)
+    #     Thickness <- EBImage::medianFilter(Thickness/Thickness_max,
+    #                                        size = pi) * Thickness_max
+    # }
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # 
@@ -298,7 +325,7 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
     if (flag_plot) {print(p)}
     # 
     if (flag_save_plot) {
-        cat('Saving...\n')
+        cat('Saving to', paste0(save_folder, Img_3D, 'Denoised_.png'), '...\n')
         ggsave(filename = paste0(save_folder, Img_3D, 'Denoised_.png'), 
                plot = p, width = 9)
     }
@@ -314,7 +341,7 @@ if (1) {
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Manual
     rm(list = ls())
-    setwd('/Volumes/Seagate_Backup/OCT_Scan/')
+    setwd("/Users/chengt/Documents/OCT_Scan")
     load("Thickness_3D_Raw_.RData")
     df_Img_3D <- data.frame(seq_Img_3D = c("Day_01_04.03_Resized_Img_3D_", "Day_06_09.03_Resized_Img_3D_", "Day_11_14.03_Resized_Img_3D_", "Day_16_19.03_Resized_Img_3D_", "Day_21_24.03_Resized_Img_3D_", "Day_23_26.03_Resized_Img_3D_", "Day_24_27.03_Resized_Img_3D_", "Day_25_28.03_Resized_Img_3D_", "Day_26_29.03_Resized_Img_3D_", "Day_27_30.03_Resized_Img_3D_", "Day_28_31.03_Resized_Img_3D_", "Day_29_01.04_Resized_Img_3D_", "Day_30_02.04_Resized_Img_3D_", "Day_32_04.04_Resized_Img_3D_", "Day_35_07.04_Resized_Img_3D_", "Day_37_09.04_Resized_Img_3D_", "Day_40_12.04_Resized_Img_3D_", "Day_42_14.04_Resized_Img_3D_", "Day_44_16.04_Resized_Img_3D_", "Day_46_18.04_Resized_Img_3D_", "Day_49_21.04_Resized_Img_3D_", "Day_52_24.04_Resized_Img_3D_", "Day_53_25.04_Resized_Img_3D_", "Day_56_28.04_Resized_Img_3D_", "Day_60_02.05_1_Resized_Img_3D_", "Day_60_02.05_10_Resized_Img_3D_", "Day_60_02.05_11_Resized_Img_3D_", "Day_60_02.05_12_Resized_Img_3D_", "Day_60_02.05_13_Resized_Img_3D_", "Day_60_02.05_14_Resized_Img_3D_", "Day_60_02.05_15_Resized_Img_3D_", "Day_60_02.05_2_Resized_Img_3D_", "Day_60_02.05_3_Resized_Img_3D_", "Day_60_02.05_4_Resized_Img_3D_", "Day_60_02.05_5_Resized_Img_3D_", "Day_60_02.05_6_Resized_Img_3D_", "Day_60_02.05_7_Resized_Img_3D_", "Day_60_02.05_8_Resized_Img_3D_", "Day_60_02.05_9_Resized_Img_3D_"), 
                             seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 
@@ -323,8 +350,8 @@ if (1) {
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Load function here
     if(1){
-        Rootfolder <- '/Volumes/Seagate_Backup/OCT_Scan/Img_3D_Denoised_/'
-        # 1
+        Rootfolder <- '/Users/chengt/Documents/OCT_Scan/Img/'
+        # 1 Default
         scale_range <- NULL
         for (iter_Img_3D in 1:NROW(df_Img_3D)) {
             Img_3D <- df_Img_3D[iter_Img_3D, 'seq_Img_3D']
@@ -340,7 +367,7 @@ if (1) {
                     save_folder = paste0(Rootfolder, 'Default/'))
             )
         }
-        # 2
+        # 2 Fixed Scale Width
         scale_range <- 60
         for (iter_Img_3D in 1:NROW(df_Img_3D)) {
             Img_3D <- df_Img_3D[iter_Img_3D, 'seq_Img_3D']
@@ -356,7 +383,7 @@ if (1) {
                     save_folder = paste0(Rootfolder, 'Fixed_Scale_Width/'))
             )
         }
-        # 3
+        # 3 Fixed Scale Range
         scale_range <- c(0,151)
         for (iter_Img_3D in 1:NROW(df_Img_3D)) {
             Img_3D <- df_Img_3D[iter_Img_3D, 'seq_Img_3D']
