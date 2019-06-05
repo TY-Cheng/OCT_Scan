@@ -225,6 +225,17 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
                                            size = pi) * Thickness_max
     }
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    if (denoise_type==3) {
+        Thickness[rowMeans(Thickness, na.rm = T) < 
+                      mean(Thickness, na.rm = T),] <- NA
+        Thickness <- na.omit(Thickness[,1:987])
+        Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
+        Thickness <- waveslim::denoise.dwt.2d(Thickness)
+        Thickness_max <- max(Thickness)
+        Thickness <- EBImage::medianFilter(Thickness/Thickness_max,
+                                           size = pi) * Thickness_max
+    }
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # 
     if (flag_ex_extreme_value) {
