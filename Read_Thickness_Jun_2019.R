@@ -2,7 +2,11 @@ rm(list = ls())
 setwd("/Users/chengt/Documents/OCT_Scan")
 load("Thickness_3D_Raw_.RData")
 getwd()
+doParallel::registerDoParallel(8)
+
 library(scales)
+library(gstat)
+library(sp)
 # library(gapfill)
 library(ggplot2)
 library(colorRamps)
@@ -206,6 +210,7 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Cropping, Resizing, Denoising
+    # impute first, resize second
     if (denoise_type==1) {
         Thickness <- na.omit(Thickness[,1:987])
         Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
@@ -255,23 +260,105 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
             Thickness/Thickness_max, size = pi) * Thickness_max
         rm(Thickness_max)
     }
-    # if (denoise_type==2) {
-    #     Thickness[rowMeans(Thickness, na.rm = T) < 
-    #                   mean(Thickness, na.rm = T),] <- NA
-    #     Thickness <- na.omit(Thickness[,1:987])
-    #     Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
-    #     Thickness <- waveslim::denoise.dwt.2d(Thickness)
-    #     Thickness_max <- max(Thickness)
-    #     Thickness <- EBImage::medianFilter(Thickness/Thickness_max,
-    #                                        size = pi) * Thickness_max
-    # }
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    if (denoise_type==3) {
+        set.seed(2019)
+        Thickness <- Thickness[,1:987]
+        threshold_row <- lowess(rowMeans(Thickness, na.rm = T), f = 1/2)$y - 
+            rowMeans(Thickness, na.rm = T) / 7
+        Thickness[rowMeans(Thickness, na.rm = T) < threshold_row, ] <- NA
+        Thickness <- na.omit(Thickness)
+        threshold_row <- lowess(rowMeans(Thickness, na.rm = T), f = 1/3)$y - 
+            sd(rowMeans(Thickness, na.rm = T)) * 2
+        Thickness[rowMeans(Thickness, na.rm = T) < threshold_row, ] <- NA
+        # 
+        if (sum(is.na(Thickness))>0) {
+            Img_3D_grid <- expand.grid(
+                X = seq_len(NCOL(Thickness)),
+                Y = seq_len(NROW(Thickness))
+            )
+            Img_3D_grid$Z <- c(t(Thickness)) # Transposed!
+            coordinates(Img_3D_grid) <- ~X+Y
+            Img_3D_grid_NAfree <- Img_3D_grid[!is.na(Img_3D_grid$Z), ]
+            # Variogram
+            print(Sys.time())
+            tictoc::tic('Iso_Variogram Calculation...')
+            Img_variogram <- variogram(
+                Z ~ 1, 
+                Img_3D_grid_NAfree[sample(NROW(Img_3D_grid_NAfree), 16180),],
+                cutoff = 300,
+                width = 10,
+                verbose = TRUE
+            )
+            tictoc::toc()
+            # Kriging
+            tictoc::tic('Kriging...')
+            Img_variogram_fit <- fit.variogram(
+                Img_variogram, 
+                model = vgm(model = 'Ste')
+            )
+            # print(Img_variogram_fit)
+            Img_3D_grid_kriged <- krige(
+                formula = Z ~ 1, 
+                locations = Img_3D_grid_NAfree[sample(1314), ],
+                newdata = Img_3D_grid[is.na(Img_3D_grid$Z), ],
+                model = Img_variogram_fit
+            )
+            print(summary(Img_3D_grid_kriged))
+            # 
+            Img_3D_grid_kriged <- data.frame(
+                coordinates(Img_3D_grid_kriged), 
+                Z = Img_3D_grid_kriged$var1.pred
+            )
+            Thickness_kriged <- t(Thickness) # transposed at first
+            apply(
+                X = Img_3D_grid_kriged, 
+                MARGIN = 1, 
+                FUN = function(vec){
+                    Thickness_kriged[vec[1], vec[2]] <<- vec[3]
+                    return(NULL)
+                }
+            )
+            Thickness <- Thickness_kriged
+            #
+            tictoc::toc()
+            print(Sys.time())
+            rm(Img_3D_grid, Img_3D_grid_NAfree, Img_3D_grid_kriged, 
+               Thickness_kriged)
+        }
+        # 
+        Thickness <- rbind(
+            EBImage::resize(
+                Thickness[1:(NROW(Thickness)/3), ], 
+                w = NROW(Thickness)*2/5, h = 666),
+            EBImage::resize(
+                Thickness[(NROW(Thickness)/3+1):(NROW(Thickness)*2/3-1), ], 
+                w = 666 - NROW(Thickness)/2, h = 666),
+            EBImage::resize(
+                Thickness[(NROW(Thickness)*2/3):NROW(Thickness), ], 
+                w = NROW(Thickness)*2/5, h = 666)
+        )
+        # 
+        Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
+        Thickness <- waveslim::denoise.modwt.2d(Thickness)
+        Thickness <- waveslim::denoise.modwt.2d(Thickness)
+        Thickness_max <- max(Thickness)
+        Thickness <- EBImage::medianFilter(
+            Thickness/Thickness_max, size = 1) * Thickness_max
+        Thickness_max <- max(Thickness)
+        Thickness <- EBImage::medianFilter(
+            Thickness/Thickness_max, size = pi) * Thickness_max
+        rm(Thickness_max)
+    }
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # 
     if (flag_ex_extreme_value) {
         # To exclude extreme values
         Thickness_wo_Extreme <- Thickness
-        minimum <- quantile(Thickness, probs = quantiles[1])
+        minimum <- max(
+            quantile(Thickness, probs = quantiles[1]), 
+            0)
         maximum <- quantile(Thickness, probs = quantiles[2])
         Thickness_wo_Extreme[Thickness_wo_Extreme<minimum] <- minimum
         Thickness_wo_Extreme[Thickness_wo_Extreme>maximum] <- maximum
@@ -347,11 +434,15 @@ if (1) {
     setwd("/Users/chengt/Documents/OCT_Scan")
     load("Thickness_3D_Raw_.RData")
     df_Img_3D <- data.frame(seq_Img_3D = c("Day_01_04.03_Resized_Img_3D_", "Day_06_09.03_Resized_Img_3D_", "Day_11_14.03_Resized_Img_3D_", "Day_16_19.03_Resized_Img_3D_", "Day_21_24.03_Resized_Img_3D_", "Day_23_26.03_Resized_Img_3D_", "Day_24_27.03_Resized_Img_3D_", "Day_25_28.03_Resized_Img_3D_", "Day_26_29.03_Resized_Img_3D_", "Day_27_30.03_Resized_Img_3D_", "Day_28_31.03_Resized_Img_3D_", "Day_29_01.04_Resized_Img_3D_", "Day_30_02.04_Resized_Img_3D_", "Day_32_04.04_Resized_Img_3D_", "Day_35_07.04_Resized_Img_3D_", "Day_37_09.04_Resized_Img_3D_", "Day_40_12.04_Resized_Img_3D_", "Day_42_14.04_Resized_Img_3D_", "Day_44_16.04_Resized_Img_3D_", "Day_46_18.04_Resized_Img_3D_", "Day_49_21.04_Resized_Img_3D_", "Day_52_24.04_Resized_Img_3D_", "Day_53_25.04_Resized_Img_3D_", "Day_56_28.04_Resized_Img_3D_", "Day_60_02.05_1_Resized_Img_3D_", "Day_60_02.05_10_Resized_Img_3D_", "Day_60_02.05_11_Resized_Img_3D_", "Day_60_02.05_12_Resized_Img_3D_", "Day_60_02.05_13_Resized_Img_3D_", "Day_60_02.05_14_Resized_Img_3D_", "Day_60_02.05_15_Resized_Img_3D_", "Day_60_02.05_2_Resized_Img_3D_", "Day_60_02.05_3_Resized_Img_3D_", "Day_60_02.05_4_Resized_Img_3D_", "Day_60_02.05_5_Resized_Img_3D_", "Day_60_02.05_6_Resized_Img_3D_", "Day_60_02.05_7_Resized_Img_3D_", "Day_60_02.05_8_Resized_Img_3D_", "Day_60_02.05_9_Resized_Img_3D_"), 
-                            seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 
+                            seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+                            # seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
                             stringsAsFactors = F)
+    # 
+    # df_Img_3D <- df_Img_3D[df_Img_3D$seq_denoise_type==3,]
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Load function here
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     if(1){
         Rootfolder <- '/Users/chengt/Documents/OCT_Scan/Img/'
         # 1 Default
