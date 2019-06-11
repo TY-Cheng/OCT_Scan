@@ -1,6 +1,9 @@
 rm(list = ls())
+setwd("/Users/chengt/Documents/OCT_Scan")
+load("Thickness_3D_Raw_.RData")
 getwd()
 library(scales)
+# library(gapfill)
 library(ggplot2)
 library(colorRamps)
 
