@@ -470,10 +470,33 @@ if (1) {
     setwd("/Users/chengt/Documents/OCT_Scan")
     load("Thickness_3D_Raw_.RData")
     df_Img_3D <- data.frame(seq_Img_3D = c("Day_01_04.03_Resized_Img_3D_", "Day_06_09.03_Resized_Img_3D_", "Day_11_14.03_Resized_Img_3D_", "Day_16_19.03_Resized_Img_3D_", "Day_21_24.03_Resized_Img_3D_", "Day_23_26.03_Resized_Img_3D_", "Day_24_27.03_Resized_Img_3D_", "Day_25_28.03_Resized_Img_3D_", "Day_26_29.03_Resized_Img_3D_", "Day_27_30.03_Resized_Img_3D_", "Day_28_31.03_Resized_Img_3D_", "Day_29_01.04_Resized_Img_3D_", "Day_30_02.04_Resized_Img_3D_", "Day_32_04.04_Resized_Img_3D_", "Day_35_07.04_Resized_Img_3D_", "Day_37_09.04_Resized_Img_3D_", "Day_40_12.04_Resized_Img_3D_", "Day_42_14.04_Resized_Img_3D_", "Day_44_16.04_Resized_Img_3D_", "Day_46_18.04_Resized_Img_3D_", "Day_49_21.04_Resized_Img_3D_", "Day_52_24.04_Resized_Img_3D_", "Day_53_25.04_Resized_Img_3D_", "Day_56_28.04_Resized_Img_3D_", "Day_60_02.05_1_Resized_Img_3D_", "Day_60_02.05_10_Resized_Img_3D_", "Day_60_02.05_11_Resized_Img_3D_", "Day_60_02.05_12_Resized_Img_3D_", "Day_60_02.05_13_Resized_Img_3D_", "Day_60_02.05_14_Resized_Img_3D_", "Day_60_02.05_15_Resized_Img_3D_", "Day_60_02.05_2_Resized_Img_3D_", "Day_60_02.05_3_Resized_Img_3D_", "Day_60_02.05_4_Resized_Img_3D_", "Day_60_02.05_5_Resized_Img_3D_", "Day_60_02.05_6_Resized_Img_3D_", "Day_60_02.05_7_Resized_Img_3D_", "Day_60_02.05_8_Resized_Img_3D_", "Day_60_02.05_9_Resized_Img_3D_"), 
-                            seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+                            seq_denoise_type = c(1, 1, 1, 1, 1,
+                                                 1, 1, 1, 1, 1, 
+                                                 1, 1, 1, 2, 2, 
+                                                 2, 2, 2, 1, 1, 
+                                                 2, 1, 1, 1, 1, 
+                                                 1, 1, 1, 1, 1, 
+                                                 1, 1, 1, 1, 1, 
+                                                 1, 1, 1, 1),
                             # seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+                            quantile_min = c(0.027, 0.027, 0.027, 0.027, 0.027, #5
+                                             0.027, 0.027, 0.027, 0.027, 0.027, #10
+                                             0.027, 0.027, 0.027, 0.027, 0.017, #15
+                                             0.027, 0.027, 0.027, 0.031, 0.031, #20
+                                             0.031, 0.027, 0.027, 0.027, 0.027, #25
+                                             0.027, 0.027, 0.027, 0.027, 0.027, #30
+                                             0.027, 0.027, 0.027, 0.027, 0.027, #35
+                                             0.027, 0.027, 0.027, 0.027),
+                            quantile_max = c(0.097, 0.097, 0.097, 0.097, 0.097, #5
+                                             0.097, 0.097, 0.097, 0.097, 0.097, #10
+                                             0.097, 0.097, 0.097, 0.097, 0.099, #15
+                                             0.097, 0.097, 0.097, 0.097, 0.097, #20
+                                             0.097, 0.097, 0.097, 0.097, 0.097, #25
+                                             0.097, 0.097, 0.097, 0.097, 0.097, #30
+                                             0.097, 0.097, 0.097, 0.097, 0.097, #35
+                                             0.097, 0.097, 0.097, 0.097),
                             stringsAsFactors = F)
-    df_Img_3D <- df_Img_3D[10:25, ]
+    # df_Img_3D <- df_Img_3D[10:25, ]
     # df_Img_3D <- df_Img_3D[df_Img_3D$seq_denoise_type==2,]
     # 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -494,6 +517,8 @@ if (1) {
                     Img_3D = Img_3D, 
                     flag_plot = F,
                     denoise_type = denoise_type, 
+                    quantiles = c(df_Img_3D$quantile_min[iter_Img_3D],
+                                  df_Img_3D$quantile_max[iter_Img_3D]),
                     scale_range = scale_range, 
                     save_folder = paste0(Rootfolder, 'Default/'))
             )
@@ -510,6 +535,8 @@ if (1) {
                     Img_3D = Img_3D, 
                     flag_plot = F,
                     denoise_type = denoise_type, 
+                    quantiles = c(df_Img_3D$quantile_min[iter_Img_3D],
+                                  df_Img_3D$quantile_max[iter_Img_3D]),
                     scale_range = scale_range, 
                     save_folder = paste0(Rootfolder, 'Fixed_Scale_Width/'))
             )
@@ -526,6 +553,8 @@ if (1) {
                     Img_3D = Img_3D, 
                     flag_plot = F,
                     denoise_type = denoise_type, 
+                    quantiles = c(df_Img_3D$quantile_min[iter_Img_3D],
+                                  df_Img_3D$quantile_max[iter_Img_3D]),
                     scale_range = scale_range, 
                     save_folder = paste0(Rootfolder, 'Fixed_Scale_Range/'))
             )
