@@ -190,6 +190,7 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
                                            multiplier_pixel2micron = 2.1,
                                            quantiles = c(.027, .97),
                                            scale_range = 60,
+                                           Fig_Title,
                                            save_folder = ''){
     # call by var_name (string)
     # deparse(substitute(Img_3D))
@@ -214,6 +215,23 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
     # impute first, resize second
     if (denoise_type==1) {
         Thickness <- na.omit(Thickness[,1:987])
+        Thickness <- rbind(
+            EBImage::resize(
+                na.omit(Thickness[
+                    1:(NROW(Thickness)*1/3), 
+                    ]), 
+                w = 300, h = 666),
+            EBImage::resize(
+                na.omit(Thickness[
+                    (NROW(Thickness)*1/3):(NROW(Thickness)*2/3), 
+                    ]), 
+                w = 300, h = 666),
+            EBImage::resize(
+                na.omit(Thickness[
+                    (NROW(Thickness)*2/3):(NROW(Thickness)), 
+                    ]), 
+                w = 300, h = 666)
+        )
         Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
         # 
         Thickness <- waveslim::denoise.modwt.2d(Thickness)
@@ -267,30 +285,16 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
                     ]), 
                 w = 300, h = 666)
         )
-        # 
         Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
         #
-        Thickness_max <- max(Thickness[295:322, ])
-        Thickness[295:322, ] <- EBImage::medianFilter(
-            Thickness[295:322, ]/Thickness_max, size = 4) * Thickness_max
-        Thickness_max <- max(Thickness[295:322, ])
-        Thickness[295:322, ] <- EBImage::medianFilter(
-            Thickness[295:322, ]/Thickness_max, size = 1) * Thickness_max
-        Thickness[295:322,] <- waveslim::denoise.modwt.2d(
-            Thickness[295:322,])
-        Thickness[295:322,] <- waveslim::denoise.modwt.2d(
-            Thickness[295:322,])
-        # Thickness[150:450,] <- waveslim::denoise.modwt.2d(
-        #     Thickness[150:450,])
-        # 
         Thickness <- waveslim::denoise.modwt.2d(Thickness)
-        # Thickness <- waveslim::denoise.modwt.2d(Thickness)
-        # Thickness_max <- max(Thickness)
-        # Thickness <- EBImage::medianFilter(
-        #     Thickness/Thickness_max, size = 1) * Thickness_max
+        Thickness <- waveslim::denoise.modwt.2d(Thickness)
         Thickness_max <- max(Thickness)
         Thickness <- EBImage::medianFilter(
-            Thickness/Thickness_max, size = 2) * Thickness_max
+            Thickness/Thickness_max, size = 1) * Thickness_max
+        Thickness_max <- max(Thickness)
+        Thickness <- EBImage::medianFilter(
+            Thickness/Thickness_max, size = pi) * Thickness_max
         rm(Thickness_max)
     }
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -412,7 +416,7 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
     p <- ggplot(Img_3D_grid, aes(x = X, y = Y, z = Z)) +
         geom_raster(aes(fill = Z)) +
         coord_fixed() +
-        labs(title = paste0(Img_3D, 'Denoised_'),
+        labs(title = Fig_Title,
              x = expression(paste('X (',mu,'m)')),
              y = expression(paste('Y (',mu,'m)')),
              fill = expression(paste('Thickness (',mu,'m)'))
@@ -429,13 +433,13 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
     if (is.null(scale_range)) {
         p <- p + 
             scale_fill_gradientn(
-                colours = matlab.like(160)
+                colours = matlab.like(300)
             )
     }else if (length(scale_range) == 2) {
         p <- p +
             scale_fill_gradientn(
                 limits = c(scale_range[1], scale_range[2]),
-                colours = matlab.like(160)
+                colours = matlab.like(300)
             )
     }else if (length(scale_range) == 1) {
         p <- p +
@@ -445,14 +449,14 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
                     max(round(min(Img_3D_grid$Z) - 20, digits = -1), 0) + 
                         scale_range
                 ),
-                colours = matlab.like(160)
+                colours = matlab.like(300)
             )
     }
     if (flag_plot) {print(p)}
     # 
     if (flag_save_plot) {
-        cat('Saving to', paste0(save_folder, Img_3D, 'Denoised_.png'), '...\n')
-        ggsave(filename = paste0(save_folder, Img_3D, 'Denoised_.png'), 
+        cat('Saving to', paste0(save_folder, Fig_Title, '.png'), '...\n')
+        ggsave(filename = paste0(save_folder, Fig_Title, '.png'), 
                plot = p, width = 7)
     }
     # 
@@ -470,33 +474,43 @@ if (1) {
     setwd("/Users/chengt/Documents/OCT_Scan")
     load("Thickness_3D_Raw_.RData")
     df_Img_3D <- data.frame(seq_Img_3D = c("Day_01_04.03_Resized_Img_3D_", "Day_06_09.03_Resized_Img_3D_", "Day_11_14.03_Resized_Img_3D_", "Day_16_19.03_Resized_Img_3D_", "Day_21_24.03_Resized_Img_3D_", "Day_23_26.03_Resized_Img_3D_", "Day_24_27.03_Resized_Img_3D_", "Day_25_28.03_Resized_Img_3D_", "Day_26_29.03_Resized_Img_3D_", "Day_27_30.03_Resized_Img_3D_", "Day_28_31.03_Resized_Img_3D_", "Day_29_01.04_Resized_Img_3D_", "Day_30_02.04_Resized_Img_3D_", "Day_32_04.04_Resized_Img_3D_", "Day_35_07.04_Resized_Img_3D_", "Day_37_09.04_Resized_Img_3D_", "Day_40_12.04_Resized_Img_3D_", "Day_42_14.04_Resized_Img_3D_", "Day_44_16.04_Resized_Img_3D_", "Day_46_18.04_Resized_Img_3D_", "Day_49_21.04_Resized_Img_3D_", "Day_52_24.04_Resized_Img_3D_", "Day_53_25.04_Resized_Img_3D_", "Day_56_28.04_Resized_Img_3D_", "Day_60_02.05_1_Resized_Img_3D_", "Day_60_02.05_10_Resized_Img_3D_", "Day_60_02.05_11_Resized_Img_3D_", "Day_60_02.05_12_Resized_Img_3D_", "Day_60_02.05_13_Resized_Img_3D_", "Day_60_02.05_14_Resized_Img_3D_", "Day_60_02.05_15_Resized_Img_3D_", "Day_60_02.05_2_Resized_Img_3D_", "Day_60_02.05_3_Resized_Img_3D_", "Day_60_02.05_4_Resized_Img_3D_", "Day_60_02.05_5_Resized_Img_3D_", "Day_60_02.05_6_Resized_Img_3D_", "Day_60_02.05_7_Resized_Img_3D_", "Day_60_02.05_8_Resized_Img_3D_", "Day_60_02.05_9_Resized_Img_3D_"), 
-                            seq_denoise_type = c(1, 1, 1, 1, 1,
-                                                 1, 1, 1, 1, 1, 
-                                                 1, 1, 1, 2, 2, 
-                                                 2, 2, 2, 1, 1, 
-                                                 2, 1, 1, 1, 1, 
-                                                 1, 1, 1, 1, 1, 
-                                                 1, 1, 1, 1, 1, 
+                            seq_denoise_type = c(1, 1, 1, 1, 1, #5
+                                                 1, 1, 1, 1, 1, #10
+                                                 1, 1, 1, 2, 2, #15
+                                                 2, 2, 2, 2, 2, #20
+                                                 2, 1, 1, 1, 1, #25
+                                                 1, 1, 1, 1, 1, #30
+                                                 1, 1, 1, 1, 1, #35
                                                  1, 1, 1, 1),
                             # seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-                            quantile_min = c(0.027, 0.027, 0.027, 0.027, 0.027, #5
-                                             0.027, 0.027, 0.027, 0.027, 0.027, #10
-                                             0.027, 0.027, 0.027, 0.027, 0.017, #15
-                                             0.027, 0.027, 0.027, 0.031, 0.031, #20
-                                             0.031, 0.027, 0.027, 0.027, 0.027, #25
-                                             0.027, 0.027, 0.027, 0.027, 0.027, #30
-                                             0.027, 0.027, 0.027, 0.027, 0.027, #35
-                                             0.027, 0.027, 0.027, 0.027),
-                            quantile_max = c(0.097, 0.097, 0.097, 0.097, 0.097, #5
-                                             0.097, 0.097, 0.097, 0.097, 0.097, #10
-                                             0.097, 0.097, 0.097, 0.097, 0.099, #15
-                                             0.097, 0.097, 0.097, 0.097, 0.097, #20
-                                             0.097, 0.097, 0.097, 0.097, 0.097, #25
-                                             0.097, 0.097, 0.097, 0.097, 0.097, #30
-                                             0.097, 0.097, 0.097, 0.097, 0.097, #35
-                                             0.097, 0.097, 0.097, 0.097),
+                            quantile_min = c(0.023, 0.023, 0.023, 0.023, 0.023, #5
+                                             0.023, 0.023, 0.023, 0.023, 0.023, #10
+                                             0.023, 0.023, 0.023, 0.023, 0.017, #15
+                                             0.023, 0.023, 0.023, 0.037, 0.037, #20
+                                             0.051, 0.023, 0.023, 0.023, 0.023, #25
+                                             0.023, 0.023, 0.023, 0.023, 0.023, #30
+                                             0.023, 0.023, 0.023, 0.023, 0.023, #35
+                                             0.023, 0.023, 0.023, 0.023),
+                            quantile_max = c(0.99, 0.99, 0.99, 0.99, 0.99, #5
+                                             0.99, 0.99, 0.99, 0.99, 0.99, #10
+                                             0.99, 0.99, 0.99, 0.99, 0.99, #15
+                                             0.99, 0.99, 0.99, 0.99, 0.99, #20
+                                             0.96, 0.99, 0.99, 0.99, 0.99, #25
+                                             0.99, 0.99, 0.99, 0.99, 0.99, #30
+                                             0.99, 0.99, 0.99, 0.99, 0.99, #35
+                                             0.99, 0.99, 0.99, 0.99),
                             stringsAsFactors = F)
-    # df_Img_3D <- df_Img_3D[10:25, ]
+    df_Img_3D$seq_Fig_Title <- 
+        paste0(
+        gsub(pattern = 'Resized_Img_3D_', replacement = '', x = df_Img_3D$seq_Img_3D),
+            c(rep('Stable_Flux', 5),
+              rep('Relaxation_1', 9),
+              rep('Relaxation_2', 4),
+              rep('Air_Scouring', 3),
+              rep('Relaxation_Air_Scouring', 3),
+              rep('Autopsy', 15))
+        )
+    # df_Img_3D <- df_Img_3D[21, ]
     # df_Img_3D <- df_Img_3D[df_Img_3D$seq_denoise_type==2,]
     # 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -520,6 +534,7 @@ if (1) {
                     quantiles = c(df_Img_3D$quantile_min[iter_Img_3D],
                                   df_Img_3D$quantile_max[iter_Img_3D]),
                     scale_range = scale_range, 
+                    Fig_Title = df_Img_3D$seq_Fig_Title[iter_Img_3D],
                     save_folder = paste0(Rootfolder, 'Default/'))
             )
         }
@@ -537,7 +552,8 @@ if (1) {
                     denoise_type = denoise_type, 
                     quantiles = c(df_Img_3D$quantile_min[iter_Img_3D],
                                   df_Img_3D$quantile_max[iter_Img_3D]),
-                    scale_range = scale_range, 
+                    scale_range = scale_range,
+                    Fig_Title = df_Img_3D$seq_Fig_Title[iter_Img_3D],
                     save_folder = paste0(Rootfolder, 'Fixed_Scale_Width/'))
             )
         }
@@ -556,6 +572,7 @@ if (1) {
                     quantiles = c(df_Img_3D$quantile_min[iter_Img_3D],
                                   df_Img_3D$quantile_max[iter_Img_3D]),
                     scale_range = scale_range, 
+                    Fig_Title = df_Img_3D$seq_Fig_Title[iter_Img_3D],
                     save_folder = paste0(Rootfolder, 'Fixed_Scale_Range/'))
             )
         }
