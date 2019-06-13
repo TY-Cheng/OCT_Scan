@@ -2,7 +2,7 @@ rm(list = ls())
 setwd("/Users/chengt/Documents/OCT_Scan")
 load("Thickness_3D_Raw_.RData")
 getwd()
-doParallel::registerDoParallel(8)
+
 
 library(scales)
 library(gstat)
@@ -10,6 +10,7 @@ library(sp)
 # library(gapfill)
 library(ggplot2)
 library(colorRamps)
+
 
 # Fiji_Macro_ -------------------------------------------------------------
 # 
@@ -187,7 +188,7 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
                                            flag_save_plot = 1,
                                            denoise_type = 1,
                                            multiplier_pixel2micron = 2.1,
-                                           quantiles = c(.01, .99),
+                                           quantiles = c(.027, .97),
                                            scale_range = 60,
                                            save_folder = ''){
     # call by var_name (string)
@@ -235,29 +236,61 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
         threshold_row <- lowess(rowMeans(Thickness, na.rm = T), f = 1/3)$y - 
             sd(rowMeans(Thickness, na.rm = T)) * 2
         Thickness[rowMeans(Thickness, na.rm = T) < threshold_row, ] <- NA
-        Thickness <- na.omit(Thickness)
+        # 
+        # Thickness <- na.omit(Thickness)
+        # Thickness <- rbind(
+        #     EBImage::resize(
+        #         Thickness[1:(NROW(Thickness)/3), ], 
+        #         w = NROW(Thickness)*2/5, h = 666),
+        #     EBImage::resize(
+        #         Thickness[(NROW(Thickness)/3+1):(NROW(Thickness)*2/3-1), ], 
+        #         w = 666 - NROW(Thickness)/2, h = 666),
+        #     EBImage::resize(
+        #         Thickness[(NROW(Thickness)*2/3):NROW(Thickness), ], 
+        #         w = NROW(Thickness)*2/5, h = 666)
+        # )
         # 
         Thickness <- rbind(
             EBImage::resize(
-                Thickness[1:(NROW(Thickness)/3), ], 
-                w = NROW(Thickness)*2/5, h = 666),
+                na.omit(Thickness[
+                    1:(NROW(Thickness)*1/3), 
+                    ]), 
+                w = 300, h = 666),
             EBImage::resize(
-                Thickness[(NROW(Thickness)/3+1):(NROW(Thickness)*2/3-1), ], 
-                w = 666 - NROW(Thickness)/2, h = 666),
+                na.omit(Thickness[
+                    (NROW(Thickness)*1/3):(NROW(Thickness)*2/3), 
+                    ]), 
+                w = 300, h = 666),
             EBImage::resize(
-                Thickness[(NROW(Thickness)*2/3):NROW(Thickness), ], 
-                w = NROW(Thickness)*2/5, h = 666)
+                na.omit(Thickness[
+                    (NROW(Thickness)*2/3):(NROW(Thickness)), 
+                    ]), 
+                w = 300, h = 666)
         )
+        # 
         Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
         #
+        Thickness_max <- max(Thickness[295:322, ])
+        Thickness[295:322, ] <- EBImage::medianFilter(
+            Thickness[295:322, ]/Thickness_max, size = 4) * Thickness_max
+        Thickness_max <- max(Thickness[295:322, ])
+        Thickness[295:322, ] <- EBImage::medianFilter(
+            Thickness[295:322, ]/Thickness_max, size = 1) * Thickness_max
+        Thickness[295:322,] <- waveslim::denoise.modwt.2d(
+            Thickness[295:322,])
+        Thickness[295:322,] <- waveslim::denoise.modwt.2d(
+            Thickness[295:322,])
+        # Thickness[150:450,] <- waveslim::denoise.modwt.2d(
+        #     Thickness[150:450,])
+        # 
         Thickness <- waveslim::denoise.modwt.2d(Thickness)
-        Thickness <- waveslim::denoise.modwt.2d(Thickness)
+        # Thickness <- waveslim::denoise.modwt.2d(Thickness)
+        # Thickness_max <- max(Thickness)
+        # Thickness <- EBImage::medianFilter(
+        #     Thickness/Thickness_max, size = 1) * Thickness_max
         Thickness_max <- max(Thickness)
         Thickness <- EBImage::medianFilter(
-            Thickness/Thickness_max, size = 1) * Thickness_max
-        Thickness_max <- max(Thickness)
-        Thickness <- EBImage::medianFilter(
-            Thickness/Thickness_max, size = pi) * Thickness_max
+            Thickness/Thickness_max, size = 2) * Thickness_max
         rm(Thickness_max)
     }
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -371,6 +404,8 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
         X = seq_len(NCOL(Thickness)),
         Y = seq_len(NROW(Thickness))
     )
+    Img_3D_grid$X <- Img_3D_grid$X / 666 * 6.01
+    Img_3D_grid$Y <- Img_3D_grid$Y / 666 * 6.01
     Img_3D_grid$Z <- c(t(Thickness))
     # 
     # Levelplot with ggplot2
@@ -378,7 +413,8 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
         geom_raster(aes(fill = Z)) +
         coord_fixed() +
         labs(title = paste0(Img_3D, 'Denoised_'),
-             x = '', y = '',
+             x = expression(paste('X (',mu,'m)')),
+             y = expression(paste('Y (',mu,'m)')),
              fill = expression(paste('Thickness (',mu,'m)'))
         ) +
         theme_bw()
@@ -393,13 +429,13 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
     if (is.null(scale_range)) {
         p <- p + 
             scale_fill_gradientn(
-                colours = matlab.like(67)
+                colours = matlab.like(160)
             )
     }else if (length(scale_range) == 2) {
         p <- p +
             scale_fill_gradientn(
                 limits = c(scale_range[1], scale_range[2]),
-                colours = matlab.like(67)
+                colours = matlab.like(160)
             )
     }else if (length(scale_range) == 1) {
         p <- p +
@@ -409,7 +445,7 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
                     max(round(min(Img_3D_grid$Z) - 20, digits = -1), 0) + 
                         scale_range
                 ),
-                colours = matlab.like(67)
+                colours = matlab.like(160)
             )
     }
     if (flag_plot) {print(p)}
@@ -417,7 +453,7 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
     if (flag_save_plot) {
         cat('Saving to', paste0(save_folder, Img_3D, 'Denoised_.png'), '...\n')
         ggsave(filename = paste0(save_folder, Img_3D, 'Denoised_.png'), 
-               plot = p, width = 9)
+               plot = p, width = 7)
     }
     # 
     return(Thickness)
@@ -434,11 +470,12 @@ if (1) {
     setwd("/Users/chengt/Documents/OCT_Scan")
     load("Thickness_3D_Raw_.RData")
     df_Img_3D <- data.frame(seq_Img_3D = c("Day_01_04.03_Resized_Img_3D_", "Day_06_09.03_Resized_Img_3D_", "Day_11_14.03_Resized_Img_3D_", "Day_16_19.03_Resized_Img_3D_", "Day_21_24.03_Resized_Img_3D_", "Day_23_26.03_Resized_Img_3D_", "Day_24_27.03_Resized_Img_3D_", "Day_25_28.03_Resized_Img_3D_", "Day_26_29.03_Resized_Img_3D_", "Day_27_30.03_Resized_Img_3D_", "Day_28_31.03_Resized_Img_3D_", "Day_29_01.04_Resized_Img_3D_", "Day_30_02.04_Resized_Img_3D_", "Day_32_04.04_Resized_Img_3D_", "Day_35_07.04_Resized_Img_3D_", "Day_37_09.04_Resized_Img_3D_", "Day_40_12.04_Resized_Img_3D_", "Day_42_14.04_Resized_Img_3D_", "Day_44_16.04_Resized_Img_3D_", "Day_46_18.04_Resized_Img_3D_", "Day_49_21.04_Resized_Img_3D_", "Day_52_24.04_Resized_Img_3D_", "Day_53_25.04_Resized_Img_3D_", "Day_56_28.04_Resized_Img_3D_", "Day_60_02.05_1_Resized_Img_3D_", "Day_60_02.05_10_Resized_Img_3D_", "Day_60_02.05_11_Resized_Img_3D_", "Day_60_02.05_12_Resized_Img_3D_", "Day_60_02.05_13_Resized_Img_3D_", "Day_60_02.05_14_Resized_Img_3D_", "Day_60_02.05_15_Resized_Img_3D_", "Day_60_02.05_2_Resized_Img_3D_", "Day_60_02.05_3_Resized_Img_3D_", "Day_60_02.05_4_Resized_Img_3D_", "Day_60_02.05_5_Resized_Img_3D_", "Day_60_02.05_6_Resized_Img_3D_", "Day_60_02.05_7_Resized_Img_3D_", "Day_60_02.05_8_Resized_Img_3D_", "Day_60_02.05_9_Resized_Img_3D_"), 
-                            seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+                            seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
                             # seq_denoise_type = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
                             stringsAsFactors = F)
+    df_Img_3D <- df_Img_3D[10:25, ]
+    # df_Img_3D <- df_Img_3D[df_Img_3D$seq_denoise_type==2,]
     # 
-    # df_Img_3D <- df_Img_3D[df_Img_3D$seq_denoise_type==3,]
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Load function here
