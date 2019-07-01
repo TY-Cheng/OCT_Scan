@@ -8,7 +8,7 @@ params.membraneIntensity = 1;
 folder = '1';
 
 % select 1 to plot segmented images, or 0 not to plot
-params.isPlot = 1;
+params.isPlot = 0;
 
 % select 1 to crop images, or 0 for no cropping
 cropimages = 0;
