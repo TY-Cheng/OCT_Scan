@@ -28,7 +28,7 @@ yrange = []; xrange = [];
 if cropimages == 1
     figure;
     title('pick a region of interest to segment for the selected images');
-    [trsh rect] = imcrop(imread(imagePath{1}));
+    [trsh, rect] = imcrop(imread(imagePath{1}));
     xrange = round(rect(1)):round(rect(1)+rect(3));
     yrange = round(rect(2)):round(rect(2)+rect(4));
 end
@@ -51,7 +51,7 @@ for i = 1:numel(imagePath)
         % error checking, get one channel from image.
         if size(img,3) > 1
             img = img(:,:,1);
-            display('warning: this is probably not an oct image');
+            fprintf('warning: this is probably not an oct image');
         end
         
         % make image type as double.
