@@ -3,15 +3,12 @@ setwd("/Users/chengt/Documents/OCT_Scan")
 load("Thickness_3D_Raw_.RData")
 getwd()
 
-
 library(scales)
 library(gstat)
 library(sp)
 # library(gapfill)
 library(ggplot2)
 library(colorRamps)
-
-
 
 
 # Copy&Paste --------------------------------------------------------------

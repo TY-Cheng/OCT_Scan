@@ -1,71 +1,121 @@
-# Import Matrix From MATfiles --------------------------------------------------------
-Import_Matrix_From_MATfiles <- function(Working_Directory = getwd()){
-    # 
+library(doParallel)
+library(plyr)
+
+library(scales)
+library(gstat)
+library(sp)
+# library(gapfill)
+library(ggplot2)
+library(colorRamps)
+
+
+# Get_Thickness_2D_From_MAT -----------------------------------------------
+# Import secant from one single mat file
+Get_Thickness_2D_From_MAT <- function(MATfname) {
+    # load the mat file
+    Img_2D <- R.matlab::readMat(MATfname)
+    Img_2D <- Img_2D$imageLayer[[3]]
+    # numerically, the result should be 'isos' - 'ilm'
+    if (Img_2D[,1,1]$name =='isos') {
+        isos_y <- as.numeric(Img_2D[,1,1]$pathY)
+        isos_x <- as.numeric(Img_2D[,1,1]$pathX)
+    }
+    if (Img_2D[,1,2]$name =='isos') {
+        isos_y <- as.numeric(Img_2D[,1,2]$pathY)
+        isos_x <- as.numeric(Img_2D[,1,2]$pathX)
+    }
+    if (Img_2D[,1,1]$name =='ilm') {
+        ilm_y <- as.numeric(Img_2D[,1,1]$pathY)
+        ilm_x <- as.numeric(Img_2D[,1,1]$pathX)
+    }
+    if (Img_2D[,1,2]$name =='ilm') {
+        ilm_y <- as.numeric(Img_2D[,1,2]$pathY)
+        ilm_x <- as.numeric(Img_2D[,1,2]$pathX)
+    }
+    # if isos & ilm length wont match, raise alert
+    dnt_match <- sum(unique(isos_y)-unique(ilm_y))
+    if (dnt_match) {
+        cat('\n', MATfname)
+        cat('\nisos & ilm match?\t', !dnt_match)
+    }
+    # RowNumber: take the last number
+    row_num <- stringr::str_extract_all(string = MATfname, 
+                                        pattern = '\\d+')[[1]]
+    row_num <- as.numeric(tail(row_num, n = 1)) +1
+    # ColumnNumber & extract the secant (thickness of the row)
+    thickness_row <- c()
+    col_range <- unique(isos_y)
+    for (col_num in col_range) {
+        # print(col_num)
+        if (col_num/max(col_range)<=.5) {
+            thickness_row[col_num] <- 
+                max(isos_x[isos_y==col_num]) - max(ilm_x[ilm_y==col_num])
+        }else{
+            thickness_row[col_num] <- 
+                min(isos_x[isos_y==col_num]) - min(ilm_x[ilm_y==col_num])
+        }
+    }
+    # assign(x = paste0('row_', row_num), value = thickness_row)
+    # return(eval(as.symbol(paste0('row_', row_num))))
+    return(list(row_num = row_num, thickness_row = thickness_row))
+}
+
+
+# Get_Thickness_3D_From_MAT -----------------------------------------------
+# from the folder, import all secant MAT files, 
+# splice 2D thickness_row into one 3D matrix 'Img_3D'
+Get_Thickness_3D_From_MAT <- function(Working_Directory, cl) {
+    tictoc::tic(Working_Directory)
+    old_wd <- getwd()
     print(Working_Directory)
     setwd(Working_Directory)
-    # Initialize the 3D Thickness matrix
-    Img_3D <- matrix(data = NA, nrow = 666, ncol = 1970)
-    # 
-    seq_MATfname <- list.files()
-    for (iter_MATfname in seq_MATfname) {
-        # Load the mat file, sequentially
-        Img_2D <- R.matlab::readMat(iter_MATfname)
-        Img_2D <- Img_2D$imageLayer[[3]]
-        # numerically, the result should be 'isos' - 'ilm'
-        if (Img_2D[,1,1]$name =='isos') {
-            isos_y <- as.numeric(Img_2D[,1,1]$pathY)
-            isos_x <- as.numeric(Img_2D[,1,1]$pathX)
-        }
-        if (Img_2D[,1,2]$name =='isos') {
-            isos_y <- as.numeric(Img_2D[,1,2]$pathY)
-            isos_x <- as.numeric(Img_2D[,1,2]$pathX)
-        }
-        if (Img_2D[,1,1]$name =='ilm') {
-            ilm_y <- as.numeric(Img_2D[,1,1]$pathY)
-            ilm_x <- as.numeric(Img_2D[,1,1]$pathX)
-        }
-        if (Img_2D[,1,2]$name =='ilm') {
-            ilm_y <- as.numeric(Img_2D[,1,2]$pathY)
-            ilm_x <- as.numeric(Img_2D[,1,2]$pathX)
-        }
-        # if isos & ilm length wont match, raise alert
-        dnt_match <- sum(unique(isos_y)-unique(ilm_y))
-        if (dnt_match) {
-            cat('\n', iter_MATfname)
-            cat('\nisos & ilm match?\t', !dnt_match)
-        }
-        # RowNumber: take the last number
-        row_num <- stringr::str_extract_all(string = iter_MATfname, 
-                                            pattern = '\\d+')[[1]]
-        row_num <- as.numeric(tail(row_num, n = 1)) +1
-        # ColumnNumber & extract the secant (thickness of the row)
-        thickness_row <- c()
-        col_range <- unique(isos_y)
-        for (col_num in col_range) {
-            # print(col_num)
-            if (col_num/max(col_range)<=.5) {
-                thickness_row[col_num] <- 
-                    max(isos_x[isos_y==col_num]) - max(ilm_x[ilm_y==col_num])
-            }else{
-                thickness_row[col_num] <- 
-                    min(isos_x[isos_y==col_num]) - min(ilm_x[ilm_y==col_num])
-            }
-        }
-        Img_3D[row_num, col_range] <- thickness_row
-    }
+    # get all mat file names inside the given location
+    # numbered well from 0 to 665, no worry
+    seq_MATfname <- sort(list.files())
+    para_socket_cl <- makeCluster(parallel::detectCores())
+    registerDoParallel(para_socket_cl)
+    Img_2D_list <- parLapplyLB(
+        cl = para_socket_cl,
+        X = seq_MATfname, 
+        fun = Get_Thickness_2D_From_MAT
+    )
+    stopCluster(para_socket_cl)
+    Img_3D <- matrix(NA, nrow = 666, ncol = 1970)
+    invisible(lapply(
+        X = Img_2D_list,
+        FUN = function(rownum_thicknessrow){
+            Img_3D[rownum_thicknessrow$row_num,
+                   1:length(rownum_thicknessrow$thickness_row)] <<- 
+                rownum_thicknessrow$thickness_row}
+    ))
+    Img_3D <- list(Img_3D[, !colSums(is.na(Img_3D))==666])
+    names(Img_3D) <- Working_Directory
+    setwd(old_wd)
+    tictoc::toc()
     return(Img_3D)
 }
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+Working_Directory <- list.files()[30]
 
 # Import MAT file ---------------------------------------------------------
 if(1){
-    Rootfolder <- '/Volumes/Seagate_Backup/OCT_Scan/MATfiles_/'
+    Rootfolder <- '/Volumes/Seagate_Backup/OCT_Scan/MBR_1_3D/MAT_files_/'
     setwd(Rootfolder)
-    # list.files()
-    seq_MATfolder <- list.files()
+    seq_MATfolder <- sort(list.files())
+    Img_list_MBR1 <- parLapply(seq_MATfolder, Get_Thickness_3D_From_MAT)
+    names(Img_list_MBR1) <- seq_MATfolder
     # 
+    Rootfolder <- '/Volumes/Seagate_Backup/OCT_Scan/MBR_2_3D/MAT_files_/'
+    setwd(Rootfolder)
+    seq_MATfolder <- sort(list.files())
+    Img_list_MBR2 <- lapply(X = seq_MATfolder, FUN = Get_Thickness_3D_From_MAT)
+    names(Img_list_MBR2) <- seq_MATfolder
+    # 
+    
+    
     for (iter_MATfolder in seq_MATfolder) {
         print(iter_MATfolder)
         setwd(paste0(Rootfolder, iter_MATfolder))
@@ -312,18 +362,19 @@ Crop_Denoise_Image_from_matrix <- function(Img_3D,
         X = seq_len(NCOL(Thickness)),
         Y = seq_len(NROW(Thickness))
     )
-    Img_3D_grid$X <- Img_3D_grid$X / 666 * 6.01
-    Img_3D_grid$Y <- Img_3D_grid$Y / 666 * 6.01
+    Img_3D_grid$X <- Img_3D_grid$X / 666 * 4
+    Img_3D_grid$Y <- Img_3D_grid$Y / 666 * 4
     Img_3D_grid$Z <- c(t(Thickness))
     # 
     # Levelplot with ggplot2
     p <- ggplot(Img_3D_grid, aes(x = X, y = Y, z = Z)) +
         geom_raster(aes(fill = Z)) +
         coord_fixed() +
-        labs(title = Fig_Title,
-             x = expression(paste('X (',mu,'m)')),
-             y = expression(paste('Y (',mu,'m)')),
-             fill = expression(paste('Thickness (',mu,'m)'))
+        labs(
+            # title = Fig_Title,
+            x = expression(paste('X (mm)')),
+            y = expression(paste('Y (mm)')),
+            fill = expression(paste('Thickness (',mu,'m)'))
         ) +
         theme_bw()
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

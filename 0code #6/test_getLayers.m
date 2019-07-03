@@ -39,7 +39,12 @@ fileID = fopen([folderPath ,'./',folder,'.txt'],'a');
 fprintf(fileID, '%s,%s,%s,%s,%s,%s\r\n', 'image','layer','mean','sd','roughness_Ra','roughness_Ra1');
 
 for i = 1:numel(imagePath)
+    tic
     try
+        clearvars -except fileID filename  folderPath i imagePath  path
+        params.membraneIntensity = 1;   folder = '1';   params.isPlot = 0;
+        yrange = []; xrange = [];
+        %%
         % read in the image.
         img = imread(imagePath{i});
         
@@ -123,6 +128,7 @@ for i = 1:numel(imagePath)
     catch
         fprintf(['\nCannot read:\n', imagePath{i}, '\n\n'])
     end
+    toc
 end
 
 fclose(fileID);
