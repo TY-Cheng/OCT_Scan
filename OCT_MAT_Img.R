@@ -33,13 +33,10 @@ if(1){
 # from 987 to 666
 str(Img_list_MBR1)
 
-
-
-
-
-# llply version
+# MBR1, llply version
 if (1) {
     print(Sys.time())
+    print(names(Img_list_MBR1))
     para_socket_cl <- makeCluster(parallel::detectCores())
     registerDoParallel(para_socket_cl)
     Thickness_list_MBR1 <- llply(
@@ -63,30 +60,33 @@ if (1) {
     stopCluster(para_socket_cl)
 }
 
-
-# plot
-llply(
-    .data = seq_along(Thickness_list_MBR1), 
-    .fun = function(i){
-        source('/Users/chengt/Documents/OCT_Scan/OCT_function_utils.R')
-        Plot_Thickness(
-            Thickness = Thickness_list_MBR1[[i]], 
-            scale_range = NULL,
-            Fig_Title = df_MBR1$seq_Fig_Title[i],
-            flag_save_plot = T,
-            # save_folder = "/Volumes/Seagate_Backup/OCT_Scan/MBR_1_3D/Thickness_Img_/Default/"
-            save_folder = '/Users/chengt/Documents/OCT_Scan/Img/Default/'
-        )
-    },
-    .parallel = T,
-    .progress = 'text',
-    Plot_Thickness = Plot_Thickness,
-    Thickness_list_MBR1 = Thickness_list_MBR1,
-    df_MBR1 = df_MBR1
-)
-
 # test_list <- Thickness_list_MBR1[1:2]
 
+# GGplot llply version
+if (1) {
+    print(Sys.time())
+    para_socket_cl <- makeCluster(parallel::detectCores())
+    registerDoParallel(para_socket_cl)
+    Plot_list_MBR1 <- llply(
+        .data = seq_along(Thickness_list_MBR1), 
+        .fun = function(i){
+            source('/Users/chengt/Documents/OCT_Scan/OCT_function_utils.R')
+            Plot_Thickness(
+                Thickness = Thickness_list_MBR1[[i]], 
+                scale_range = NULL,
+                Fig_Title = df_MBR1$seq_Fig_Title[i],
+                flag_save_plot = T,
+                # save_folder = "/Volumes/Seagate_Backup/OCT_Scan/MBR_1_3D/Thickness_Img_/Default/"
+                save_folder = '/Users/chengt/Documents/OCT_Scan/Img/Default/'
+            )
+        },
+        .parallel = T,
+        .progress = 'text',
+        Plot_Thickness = Plot_Thickness,
+        Thickness_list_MBR1 = Thickness_list_MBR1,
+        df_MBR1 = df_MBR1
+    )
+    stopCluster(para_socket_cl)
+}
 
-stopCluster(para_socket_cl)
 
