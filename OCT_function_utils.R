@@ -214,7 +214,8 @@ Impute_Filter_Image_from_Matrix <- function(
 Plot_Thickness <- function(Thickness, 
                            scale_range = 60,
                            Fig_Title,
-                           flag_save_plot= T,
+                           flag_plot = F,
+                           flag_save_plot = T,
                            save_folder = '') {
     print(paste0('Processing ', Fig_Title, '...'))
     tictoc::tic(paste0('Finished ', Fig_Title))
@@ -267,7 +268,8 @@ Plot_Thickness <- function(Thickness,
                 colours = matlab.like(300)
             )
     }
-    # if (flag_plot) {print(p)}
+    # 
+    if (flag_plot) {print(p)}
     # 
     if (flag_save_plot) {
         cat('Saving', paste0(save_folder, Fig_Title, '.png'), '...\n')
@@ -275,6 +277,7 @@ Plot_Thickness <- function(Thickness,
                plot = p, width = 7)
     }
     tictoc::toc()
+    return(p)
 }
 
 
