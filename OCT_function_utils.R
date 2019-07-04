@@ -119,6 +119,7 @@ Get_Thickness_3D_From_MAT <- function(
 
 
 # Process matrix to image -------------------------------------------------
+# from 987 to 666
 Impute_Filter_Image_from_Matrix <- function(
     Img_3D, 
     Fig_Title,

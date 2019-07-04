@@ -1,5 +1,6 @@
 setwd('/Users/chengt/Documents/OCT_Scan/')
-source('/Users/chengt/Documents/OCT_Scan/OCT_function_utils.R')
+load("/Users/chengt/Documents/OCT_Scan/Thickness_3D_Raw_.RData")
+# source('/Users/chengt/Documents/OCT_Scan/OCT_function_utils.R')
 # Import MAT file ---------------------------------------------------------
 if(1){
     # MBR_1
@@ -35,11 +36,12 @@ str(Img_list_MBR1)
 
 para_socket_cl <- makeCluster(parallel::detectCores())
 registerDoParallel(para_socket_cl)
-# 
-Thickness_list_MBR1 <- parLapplyLB(
-    cl = para_socket_cl,
-    X = seq_along(Img_list_MBR1),
-    fun = function(i){
+stopCluster(para_socket_cl)
+
+# llply version
+Thickness_list_MBR1 <- llply(
+    .data = seq_along(Img_list_MBR1),
+    .fun = function(i){
         Impute_Filter_Image_from_Matrix(
             Img_3D = Img_list_MBR1[[i]], 
             Fig_Title = df_MBR1$seq_Fig_Title[i],
@@ -49,13 +51,15 @@ Thickness_list_MBR1 <- parLapplyLB(
             quantiles = c(df_MBR1$seq_Quantile_Min, df_MBR1$seq_Quantile_Max)
         )
     },
+    .parallel = T,
+    # .progress = 'text',
     Impute_Filter_Image_from_Matrix = Impute_Filter_Image_from_Matrix,
     Img_list_MBR1 = Img_list_MBR1,
     df_MBR1 = df_MBR1
 )
-# 
-stopCluster(para_socket_cl)
-# 
+
+
+# plot
 llply(
     .data = seq_along(Thickness_list_MBR1), 
     .fun = function(i){
@@ -69,7 +73,8 @@ llply(
             save_folder = '/Users/chengt/Documents/OCT_Scan/Img/Default/'
         )
     },
-    .progress = T,
+    .parallel = T,
+    .progress = 'text',
     Plot_Thickness = Plot_Thickness,
     Thickness_list_MBR1 = Thickness_list_MBR1,
     df_MBR1 = df_MBR1
