@@ -1,5 +1,6 @@
 library(doParallel)
 library(plyr)
+library(dplyr)
 library(mgcv)
 library(EBImage)
 # library(scales)
@@ -9,6 +10,25 @@ library(EBImage)
 library(ggplot2)
 library(colorRamps)
 
+
+
+# Hyperparameters ---------------------------------------------------------
+df_MBR1 <- data.frame(
+    seq_Fig_Title = paste0(
+        names(Img_list_MBR1), 
+        c(rep('Stable_Flux', 5), 
+          rep('Relaxation_1', 9), 
+          rep('Relaxation_2', 4), 
+          rep('Air_Scouring', 3),
+          rep('Relaxation_Air_Scouring', 3),
+          rep('Autopsy', 15))
+    ),
+    seq_Denoise_Type = c(rep(1, 13), rep(2, 8), rep(1, 18)),
+    seq_Quantile_Min = c(rep(.023, 14), .017, 
+                         rep(.023, 3), rep(.037, 2), 
+                         .051, rep(.023, 18)),
+    seq_Quantile_Max = c(rep(.99, 20), .96, rep(.99, 18))
+)
 
 # Get_Thickness_2D_From_MAT -----------------------------------------------
 # Import secant from one single mat file
@@ -65,10 +85,13 @@ Get_Thickness_2D_From_MAT <- function(MATfname) {
 # Get_Thickness_3D_From_MAT -----------------------------------------------
 # from the folder, import all secant MAT files, 
 # splice 2D thickness_row into one 3D matrix 'Img_3D'
-Get_Thickness_3D_From_MAT <- function(Working_Directory) {
+Get_Thickness_3D_From_MAT <- function(
+    Working_Directory,
+    Rootfolder = Rootfolder
+) {
     tictoc::tic(Working_Directory)
-    old_wd <- getwd()
     print(Working_Directory)
+    setwd(Rootfolder)
     setwd(Working_Directory)
     # get all mat file names inside the given location
     # numbered well from 0 to 665, no worry
@@ -90,7 +113,6 @@ Get_Thickness_3D_From_MAT <- function(Working_Directory) {
                 rownum_thicknessrow$thickness_row}
     ))
     Img_3D <- Img_3D[, !colSums(is.na(Img_3D))==666]
-    setwd(old_wd)
     tictoc::toc()
     return(Img_3D)
 }
@@ -99,11 +121,14 @@ Get_Thickness_3D_From_MAT <- function(Working_Directory) {
 # Process matrix to image -------------------------------------------------
 Impute_Filter_Image_from_Matrix <- function(
     Img_3D, 
+    Fig_Title,
     denoise_type = 1,
     multiplier_pixel2micron = 2.1,
     flag_ex_extreme_value = TRUE,
     quantiles = c(.027, .97)
 ) {
+    print(paste0('Processing ', Fig_Title, '...'))
+    tictoc::tic(paste0('Finished ', Fig_Title))
     Thickness <- Img_3D
     # From pixels to microns
     Thickness <- Thickness * multiplier_pixel2micron
@@ -179,6 +204,7 @@ Impute_Filter_Image_from_Matrix <- function(
         Thickness <- Thickness_wo_Extreme
         rm(Thickness_wo_Extreme, maximum, minimum)
     }
+    tictoc::toc()
     return(Thickness)
 }
 
@@ -189,6 +215,8 @@ Plot_Thickness <- function(Thickness,
                            Fig_Title,
                            flag_save_plot= T,
                            save_folder = '') {
+    print(paste0('Processing ', Fig_Title, '...'))
+    tictoc::tic(paste0('Finished ', Fig_Title))
     # ReExpand the Grid to plot 666*666 as 4 mm * 4 mm
     Img_3D_grid <- expand.grid(
         X = seq_len(NCOL(Thickness)),
@@ -202,7 +230,7 @@ Plot_Thickness <- function(Thickness,
         geom_raster(aes(fill = Z)) +
         coord_fixed() +
         labs(
-            # title = Fig_Title,
+            title = Fig_Title,
             x = 'X (mm)',
             y = 'Y (mm)',
             fill = paste('Thickness\n(\u03BCm)', sep = '')
@@ -241,10 +269,11 @@ Plot_Thickness <- function(Thickness,
     # if (flag_plot) {print(p)}
     # 
     if (flag_save_plot) {
-        cat('Saving to', paste0(save_folder, Fig_Title, '.png'), '...\n')
+        cat('Saving', paste0(save_folder, Fig_Title, '.png'), '...\n')
         ggsave(filename = paste0(save_folder, Fig_Title, '.png'), 
                plot = p, width = 7)
     }
+    tictoc::toc()
 }
 
 
