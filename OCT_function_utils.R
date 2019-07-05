@@ -37,30 +37,40 @@ df_MBR1 <- data.frame(
 )
 # 
 df_MBR2 <- data.frame(
-    seq_Fig_Index = names(Img_list_MBR1),
+    seq_Fig_Index = names(Img_list_MBR2),
     seq_Fig_Title = paste0(
-        names(Img_list_MBR1), 
-        c(rep('Stable_Flux', 5), 
-          rep('Relaxation_1', 9), 
-          rep('Relaxation_2', 4), 
-          rep('Air_Scouring', 3),
-          rep('Relaxation_Air_Scouring', 3),
-          rep('Autopsy', 15))
+        c(
+            rep('Reactor_1_Relaxation_', 18),
+            rep('Reactor_2_Air_Scouring_', 11),
+            rep('Reactor_3_Relaxation_Air_Scouring_', 11)
+        ),
+        c(
+            rep('Day_', 15), rep('Autopsy_', 3),
+            rep('Day_', 8), rep('Autopsy_', 3),
+            rep('Day_', 8), rep('Autopsy_', 3)
+        ),
+        stringi::stri_extract_last_regex(names(Img_list_MBR2), '(\\d)+')
     ),
-    seq_Denoise_Type = c(rep(1, 13), rep(2, 8), rep(1, 18)),
-    seq_Loess_Span = c(rep(.02, 18), .02, rep(.02, 20)),
-    seq_Quantile_Min = c(rep(.01, 14), .01, 
-                         rep(.01, 3), 
-                         .01, # 44
-                         .01, # 46
-                         .01, # 49
-                         rep(.01, 18)),
-    seq_Quantile_Max = c(
-        rep(.999, 13), 
-        rep(.999, 5),
-        rep(.995, 3),
-        rep(.999, 18)
-    )
+    seq_Denoise_Type = c(
+        rep(2,4), # 4
+        rep(3,8), # Reactor_1_Relaxation_Day_5 6 7 8 9 12 14 20
+        2,2, # Reactor_1_Relaxation_Day_26, 34
+        3,3,
+        2,3,   # Reactor_1_Relaxation_Autopsy_2, 3
+        rep(2,3), # Reactor_2_Air_Scouring_Day_1, 4, 8
+        rep(3,4), # Reactor_2_Air_Scouring_Day_12, 17, 26, 34
+        2,    # Reactor_2_Air_Scouring_Day_39, 
+        3,    # Reactor_2_Air_Scouring_Autopsy_1
+        2,    # Reactor_2_Air_Scouring_Autopsy_2
+        3,    # Reactor_2_Air_Scouring_Autopsy_3
+        rep(2,5), # Reactor_3_Relaxation_Air_Scouring_Day_1, 4, 8, 12, 17
+        3,    # Reactor_3_Relaxation_Air_Scouring_Day_26
+        2,2,  # Reactor_3_Relaxation_Air_Scouring_Day_34, 39
+        2,2,3 # Reactor_3_Relaxation_Air_Scouring_Autopsy_1, 2, 3
+    ),
+    seq_Loess_Span = c(rep(.02, 40)),
+    seq_Quantile_Min = c(rep(.005, 40)),
+    seq_Quantile_Max = c(rep(.998, 40))
 )
 
 # Get_Thickness_2D_From_MAT -----------------------------------------------
@@ -150,6 +160,30 @@ Get_Thickness_3D_From_MAT <- function(
 }
 
 
+# Remove consecutive NAs --------------------------------------------------
+Remove_Consecutive_NA <- function(Thickness) {
+    fit_ref <- rowMeans(Thickness)
+    index_na <- rle(is.na(fit_ref))
+    index_na_rm = which(index_na$values == TRUE & index_na$lengths > 2)
+    if (any(index_na_rm)) {
+        index_na_rm_end <- cumsum(index_na$lengths)[index_na_rm]
+        index_na_rm_start <- cumsum(index_na$lengths)[ifelse(
+            index_na_rm > 1, index_na_rm - 1, 0
+        )] + 1
+        if (0 %in% ifelse(index_na_rm > 1, index_na_rm - 1, 0)) {
+            index_na_rm_start <-  c(1, index_na_rm_start)
+        }
+        # 
+        index_na_rm <- c()
+        for (iter_i in seq_along(index_na_rm_start)) {
+            index_na_rm <- c(index_na_rm, 
+                             index_na_rm_start[iter_i]:(index_na_rm_end[iter_i]-1))
+        }
+        Thickness <- Thickness[!seq_len(NROW(Thickness))%in%index_na_rm, ]
+    }
+    return(Thickness)
+}
+
 # Process matrix to image -------------------------------------------------
 # from 987 to 666
 Impute_Filter_Image_from_Matrix <- function(
@@ -159,7 +193,8 @@ Impute_Filter_Image_from_Matrix <- function(
     multiplier_pixel2micron = 2.1,
     flag_ex_extreme_value = TRUE,
     loess_span = .02,
-    quantiles = c(.027, .97)
+    quantiles = c(.027, .97),
+    Remove_Consecutive_NA = Remove_Consecutive_NA
 ) {
     # print(paste0('Processing ', Fig_Title, '...'))
     Thickness <- Img_3D
@@ -167,6 +202,8 @@ Impute_Filter_Image_from_Matrix <- function(
     Thickness <- Thickness * multiplier_pixel2micron
     # rm(Img_3D)
     # 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
     # Cropping for denoise_type 2
     if (denoise_type %in% 2:3) {
         fit_ref <- rowMeans(Thickness)
@@ -190,31 +227,14 @@ Impute_Filter_Image_from_Matrix <- function(
             .4 * predict(fit_loess, 1:666) - 
             sd(fit_ref, na.rm = T) * 1.732
         Thickness[fit_ref < threshold_row, ] <- NA
-        threshold_row <- predict(fit_loess, 1:666) + sd(fit_ref, na.rm = T) * exp(1)
+        threshold_row <- predict(fit_loess, 1:666) + sd(fit_ref, na.rm = T) * sqrt(5)
         Thickness[fit_ref > threshold_row, ] <- NA
     }
     # rm too much NA
-    if (1) {
-        fit_ref <- rowMeans(Thickness)
-        index_na <- rle(is.na(fit_ref))
-        index_na_rm = which(index_na$values == TRUE & index_na$lengths > 2)
-        if (any(index_na_rm)) {
-            index_na_rm_end <- cumsum(index_na$lengths)[index_na_rm]
-            index_na_rm_start <- cumsum(index_na$lengths)[ifelse(
-                index_na_rm > 1, index_na_rm - 1, 0
-            )] + 1
-            if (0 %in% ifelse(index_na_rm > 1, index_na_rm - 1, 0)) {
-                index_na_rm_start <-  c(1, index_na_rm_start)
-            }
-            # 
-            index_na_rm <- c()
-            for (iter_i in seq_along(index_na_rm_start)) {
-                index_na_rm <- c(index_na_rm, 
-                                 index_na_rm_start[iter_i]:(index_na_rm_end[iter_i]-1))
-            }
-            Thickness <- Thickness[!seq_len(NROW(Thickness))%in%index_na_rm, ]
-        }
-    }
+    Thickness <- Remove_Consecutive_NA(Thickness = Thickness)
+    # 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
     if (flag_ex_extreme_value) {
         # To exclude extreme values
         Thickness_wo_Extreme <- Thickness
@@ -267,7 +287,72 @@ Impute_Filter_Image_from_Matrix <- function(
         Thickness_wo_Extreme[Thickness_wo_Extreme > maximum] <- NA
         Thickness <- Thickness_wo_Extreme
     }
-    # 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    if (Fig_Title %in% c('Reactor_1_Relaxation_Day_3',
+                         'Reactor_1_Relaxation_Day_4')
+    ) {
+        Thickness_wo_Extreme <- Thickness
+        minimum <- max(
+            quantile(Thickness, probs = 1/10^2, na.rm = T), 
+            0)
+        maximum <- quantile(Thickness, probs = 1-2/10^3, na.rm = T)
+        Thickness_wo_Extreme[Thickness_wo_Extreme < minimum] <- NA
+        Thickness_wo_Extreme[Thickness_wo_Extreme > maximum] <- NA
+        Thickness <- Thickness_wo_Extreme
+    }
+    if (Fig_Title %in% c('Reactor_1_Relaxation_Day_34')
+    ) {
+        Thickness_wo_Extreme <- Thickness
+        minimum <- max(
+            quantile(Thickness, probs = 3/10^2, na.rm = T), 
+            0)
+        maximum <- quantile(Thickness, probs = 1-5/10^2, na.rm = T)
+        Thickness_wo_Extreme[Thickness_wo_Extreme < minimum] <- NA
+        Thickness_wo_Extreme[Thickness_wo_Extreme > maximum] <- NA
+        Thickness <- Thickness_wo_Extreme
+        Thickness <- Remove_Consecutive_NA(Thickness)
+    }
+    if (Fig_Title %in% c('Reactor_2_Air_Scouring_Day_4',
+                         'Reactor_2_Air_Scouring_Day_12')
+    ) {
+        Thickness_wo_Extreme <- Thickness
+        minimum <- max(
+            quantile(Thickness, probs = 5/10^3, na.rm = T), 
+            0)
+        maximum <- quantile(Thickness, probs = 1-1/10^2, na.rm = T)
+        Thickness_wo_Extreme[Thickness_wo_Extreme < minimum] <- NA
+        Thickness_wo_Extreme[Thickness_wo_Extreme > maximum] <- NA
+        Thickness <- Thickness_wo_Extreme
+    }
+    if (Fig_Title %in% c('Reactor_2_Air_Scouring_Day_34', 
+                         'Reactor_2_Air_Scouring_Autopsy_2')
+    ) {
+        Thickness_wo_Extreme <- Thickness
+        minimum <- max(
+            quantile(Thickness, probs = 5/10^3, na.rm = T), 
+            0)
+        maximum <- quantile(Thickness, probs = 1-3/10^2, na.rm = T)
+        Thickness_wo_Extreme[Thickness_wo_Extreme < minimum] <- NA
+        Thickness_wo_Extreme[Thickness_wo_Extreme > maximum] <- NA
+        Thickness <- Thickness_wo_Extreme
+    }
+    if (Fig_Title %in% c('Reactor_3_Relaxation_Air_Scouring_Autopsy_3')
+    ) {
+        Thickness_wo_Extreme <- Thickness
+        minimum <- max(
+            quantile(Thickness, probs = 5/10^3, na.rm = T), 
+            0)
+        maximum <- 40
+        Thickness_wo_Extreme[Thickness_wo_Extreme < minimum] <- NA
+        Thickness_wo_Extreme[Thickness_wo_Extreme > maximum] <- NA
+        Thickness <- Thickness_wo_Extreme
+        Thickness <- Remove_Consecutive_NA(Thickness)
+    }
+    
+    
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
     # Imputation
     if (sum(is.na(Thickness))>0) {
         Img_3D_grid <- expand.grid(
@@ -319,7 +404,7 @@ Impute_Filter_Image_from_Matrix <- function(
     # Resize to 666*666
     Thickness <- EBImage::resize(Thickness, w = 666, h = 666)
     # Filter
-    if (denoise_type %in% 1) {
+    if (denoise_type %in% 1:2) {
         Thickness <- waveslim::denoise.modwt.2d(Thickness)
         Thickness <- waveslim::denoise.modwt.2d(Thickness)
         Thickness_max <- max(Thickness)
@@ -330,7 +415,7 @@ Impute_Filter_Image_from_Matrix <- function(
             Thickness/Thickness_max, size = pi) * Thickness_max
         # rm(Thickness_max)
     }
-    if (denoise_type %in% 2) {
+    if (denoise_type %in% 3) {
         Thickness <- waveslim::denoise.modwt.2d(Thickness)
         Thickness <- waveslim::denoise.modwt.2d(Thickness)
         Thickness_max <- max(Thickness)
