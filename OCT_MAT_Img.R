@@ -1,8 +1,10 @@
-setwd('/Users/chengt/Documents/OCT_Scan/')
-load("/Users/chengt/Documents/OCT_Scan/Thickness_3D_Raw_.RData")
-# source('/Users/chengt/Documents/OCT_Scan/OCT_function_utils.R')
+if (0) {
+    setwd('/Users/chengt/Documents/OCT_Scan/')
+    load("/Users/chengt/Documents/OCT_Scan/Thickness_3D_Raw_.RData")
+    source('/Users/chengt/Documents/OCT_Scan/OCT_function_utils.R')
+}
 # Import MAT file ---------------------------------------------------------
-if(1){
+if(0){
     # MBR_1
     Rootfolder <- '/Volumes/Seagate_Backup/OCT_Scan/MBR_1_3D/MAT_files_/'
     setwd(Rootfolder)
@@ -29,64 +31,86 @@ if(1){
 
 
 
-# Process from image to thickness -----------------------------------------
+
+# Processing and Imaging --------------------------------------------------
 # from 987 to 666
-str(Img_list_MBR1)
-
-# MBR1, llply version
-if (1) {
+# str(Img_list_MBR1)
+# Interpolation & Filtering, MBR1
+if (0) {
+    seq_list <- as.list(as.data.frame(t(df_MBR1), stringsAsFactors = F))
+    names(seq_list) <- df_MBR1$seq_Fig_Index
+    # 
+    # seq_list <- seq_list[c(14:21,36)]
+    # 
     print(Sys.time())
-    print(names(Img_list_MBR1))
+    print(names(seq_list))
+    # 
     para_socket_cl <- makeCluster(parallel::detectCores())
     registerDoParallel(para_socket_cl)
+    # llply version
     Thickness_list_MBR1 <- llply(
-        .data = seq_along(Img_list_MBR1),
-        .fun = function(i){
-            Impute_Filter_Image_from_Matrix(
-                Img_3D = Img_list_MBR1[[i]], 
-                Fig_Title = df_MBR1$seq_Fig_Title[i],
-                denoise_type = df_MBR1$seq_Denoise_Type[i],
-                multiplier_pixel2micron = 2.1,
-                flag_ex_extreme_value = T,
-                quantiles = c(df_MBR1$seq_Quantile_Min, df_MBR1$seq_Quantile_Max)
+        .data = seq_list,
+        .fun = function(
+            iter_i, Img_list, Img_Processing
+        ){
+            return(
+                Img_Processing(
+                    Img_3D = Img_list[[iter_i[1]]], 
+                    Fig_Title = iter_i[2],
+                    denoise_type = as.numeric(iter_i[3]),
+                    multiplier_pixel2micron = 2.1,
+                    flag_ex_extreme_value = T,
+                    loess_span = as.numeric(iter_i[4]),
+                    quantiles = c(as.numeric(iter_i[5]), as.numeric(iter_i[6]))
+                )
             )
         },
+        .inform = T,
         .parallel = T,
-        # .progress = 'text',
-        Impute_Filter_Image_from_Matrix = Impute_Filter_Image_from_Matrix,
-        Img_list_MBR1 = Img_list_MBR1,
-        df_MBR1 = df_MBR1
+        # .progress = 'time',
+        Img_list = Img_list_MBR1,
+        Img_Processing = Impute_Filter_Image_from_Matrix
     )
+    # 
+    rm(seq_list)
     stopCluster(para_socket_cl)
-}
-
-# test_list <- Thickness_list_MBR1[1:2]
-
-# GGplot llply version
-if (1) {
     print(Sys.time())
+}
+# GGplot llply version, MBR1
+if (0) {
+    seq_list <- seq_along(Thickness_list_MBR1)
+    names(seq_list) <- names(Thickness_list_MBR1[seq_list])
+    # 
+    print(Sys.time())
+    print(names(seq_list))
     para_socket_cl <- makeCluster(parallel::detectCores())
     registerDoParallel(para_socket_cl)
+    # 
     Plot_list_MBR1 <- llply(
-        .data = seq_along(Thickness_list_MBR1), 
-        .fun = function(i){
-            source('/Users/chengt/Documents/OCT_Scan/OCT_function_utils.R')
+        .data = seq_list,
+        .fun = function(
+            i, 
+            Plot_Thickness, 
+            Thickness_list, 
+            df_hyper
+        ){
             Plot_Thickness(
-                Thickness = Thickness_list_MBR1[[i]], 
+                Thickness = Thickness_list[[i]], 
                 scale_range = NULL,
-                Fig_Title = df_MBR1$seq_Fig_Title[i],
+                Fig_Title = df_hyper$seq_Fig_Title[i],
+                flag_plot = F,
                 flag_save_plot = T,
-                # save_folder = "/Volumes/Seagate_Backup/OCT_Scan/MBR_1_3D/Thickness_Img_/Default/"
-                save_folder = '/Users/chengt/Documents/OCT_Scan/Img/Default/'
+                save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Default/'
             )
         },
         .parallel = T,
-        .progress = 'text',
+        # .progress = 'time',
         Plot_Thickness = Plot_Thickness,
-        Thickness_list_MBR1 = Thickness_list_MBR1,
-        df_MBR1 = df_MBR1
+        Thickness_list = Thickness_list_MBR1,
+        df_hyper = df_MBR1
     )
+    # 
+    rm(seq_list)
     stopCluster(para_socket_cl)
+    print(Sys.time())
 }
-
-
