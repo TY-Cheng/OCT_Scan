@@ -460,6 +460,7 @@ Plot_Thickness <- function(Thickness,
     # Levelplot with ggplot2
     p <- ggplot2::ggplot(Img_3D_grid, ggplot2::aes(x = X, y = Y, z = Z)) +
         ggplot2::geom_raster(ggplot2::aes(fill = Z)) +
+        # stat_contour(bins = 15, colour = 'white') +
         ggplot2::coord_fixed() +
         ggplot2::labs(
             title = Fig_Title,
