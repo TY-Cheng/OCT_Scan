@@ -1,7 +1,7 @@
 if (0) {
     setwd('/Users/chengt/Documents/OCT_Scan/')
     load("/Users/chengt/Documents/OCT_Scan/OCT_Thickness.RData")
-    # source('/Users/chengt/Documents/OCT_Scan/OCT_function_utils.R')
+    source('/Users/chengt/Documents/OCT_Scan/OCT_function_utils.R')
 }
 # Import MAT file ---------------------------------------------------------
 if(0){
@@ -38,7 +38,7 @@ if(0){
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 # str(Img_list_MBR1)
-if (1) {
+if (0) {
     tictoc::tic('Interpolation & Filtering, MBR1')
     seq_list <- as.list(as.data.frame(t(df_MBR1), stringsAsFactors = F))
     names(seq_list) <- df_MBR1$seq_Fig_Index
@@ -83,7 +83,7 @@ if (1) {
     tictoc::toc()
 }
 # GGplot llply version, MBR1
-if (1) {
+if (0) {
     tictoc::tic('Plotting, MBR1')
     seq_list <- seq_along(Thickness_list_MBR1)
     names(seq_list) <- names(Thickness_list_MBR1[seq_list])
@@ -129,7 +129,7 @@ if (1) {
 # Interpolation & Filtering & Plotting , MBR2
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # str(Img_list_MBR2)
-if (1) {
+if (0) {
     tictoc::tic('Interpolation & Filtering, MBR2')
     seq_list <- as.list(as.data.frame(t(df_MBR2), stringsAsFactors = F))
     names(seq_list) <- df_MBR2$seq_Fig_Index
@@ -174,7 +174,7 @@ if (1) {
     tictoc::toc()
 }
 # GGplot llply version, MBR2
-if (1) {
+if (0) {
     tictoc::tic('Plotting, MBR2')
     seq_list <- seq_along(Thickness_list_MBR2)
     names(seq_list) <- names(Thickness_list_MBR2[seq_list])
@@ -206,6 +206,189 @@ if (1) {
             # .progress = 'time',
             Plot_Thickness = Plot_Thickness,
             Thickness_list = Thickness_list_MBR2,
+            df_hyper = df_MBR2
+        )
+    )
+    # 
+    rm(seq_list)
+    stopCluster(para_socket_cl)
+    print(Sys.time())
+    tictoc::toc()
+}
+
+
+# Calibration and Imaging --------------------------------------------------
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# Calibrating mean&sd & Plotting, MBR1
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+# str(Thickness_list_MBR1)
+if (1) {
+    tictoc::tic('Calibrating, MBR1')
+    seq_list <- seq_along(Thickness_list_MBR1)
+    names(seq_list) <- names(Thickness_list_MBR1[seq_list])
+    # 
+    # seq_list <- seq_list[c(14:21,36)]
+    # 
+    print(Sys.time())
+    print(names(seq_list))
+    # 
+    para_socket_cl <- makeCluster(parallel::detectCores())
+    registerDoParallel(para_socket_cl)
+    # llply version
+    Thickness_list_MBR1_Calibrated <- llply(
+        .data = seq_list,
+        .fun = function(
+            iter_i, 
+            Thickness_Calibration, 
+            Thickness_list, 
+            df_hyper
+        ){
+            return(
+                Thickness_Calibration(
+                    Thickness_raw = Thickness_list[[iter_i]],
+                    mean_aim = df_hyper$seq_mean_aim[iter_i],
+                    sd_aim = df_hyper$seq_sd_aim[iter_i]
+                )
+            )
+        },
+        .inform = T,
+        .parallel = T,
+        # .progress = 'time',
+        Thickness_Calibration = Calibrate_Thickness,
+        Thickness_list = Thickness_list_MBR1,
+        df_hyper = df_MBR1
+    )
+    # 
+    rm(seq_list)
+    stopCluster(para_socket_cl)
+    print(Sys.time())
+    tictoc::toc()
+}
+# GGplot llply version, MBR1
+if (1) {
+    tictoc::tic('Plotting, MBR1, Calibrated')
+    seq_list <- seq_along(Thickness_list_MBR1_Calibrated)
+    names(seq_list) <- names(Thickness_list_MBR1_Calibrated[seq_list])
+    # 
+    print(Sys.time())
+    print(names(seq_list))
+    para_socket_cl <- makeCluster(parallel::detectCores())
+    registerDoParallel(para_socket_cl)
+    # 
+    invisible(
+        llply(
+            .data = seq_list,
+            .fun = function(
+                i, 
+                Plot_Thickness, 
+                Thickness_list, 
+                df_hyper
+            ){
+                Plot_Thickness(
+                    Thickness = Thickness_list[[i]], 
+                    scale_range = NULL,
+                    Fig_Title = df_hyper$seq_Fig_Title[i],
+                    flag_plot = F,
+                    flag_save_plot = T,
+                    save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Default_Calibrated/'
+                )
+            },
+            .parallel = T,
+            # .progress = 'time',
+            Plot_Thickness = Plot_Thickness,
+            Thickness_list = Thickness_list_MBR1_Calibrated,
+            df_hyper = df_MBR1
+        )
+    )
+    # 
+    rm(seq_list)
+    stopCluster(para_socket_cl)
+    print(Sys.time())
+    tictoc::toc()
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# Calibrating mean&sd & Plotting, MBR2
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+# str(Thickness_list_MBR2)
+if (1) {
+    tictoc::tic('Calibrating, MBR2')
+    seq_list <- seq_along(Thickness_list_MBR2)
+    names(seq_list) <- names(Thickness_list_MBR2[seq_list])
+    # 
+    # seq_list <- seq_list[c(14:21,36)]
+    # 
+    print(Sys.time())
+    print(names(seq_list))
+    # 
+    para_socket_cl <- makeCluster(parallel::detectCores())
+    registerDoParallel(para_socket_cl)
+    # llply version
+    Thickness_list_MBR2_Calibrated <- llply(
+        .data = seq_list,
+        .fun = function(
+            iter_i, 
+            Thickness_Calibration, 
+            Thickness_list, 
+            df_hyper
+        ){
+            return(
+                Thickness_Calibration(
+                    Thickness_raw = Thickness_list[[iter_i]],
+                    mean_aim = df_hyper$seq_mean_aim[iter_i],
+                    sd_aim = df_hyper$seq_sd_aim[iter_i]
+                )
+            )
+        },
+        .inform = T,
+        .parallel = T,
+        # .progress = 'time',
+        Thickness_Calibration = Calibrate_Thickness,
+        Thickness_list = Thickness_list_MBR2,
+        df_hyper = df_MBR2
+    )
+    # 
+    rm(seq_list)
+    stopCluster(para_socket_cl)
+    print(Sys.time())
+    tictoc::toc()
+}
+# GGplot llply version, MBR2
+if (1) {
+    tictoc::tic('Plotting, MBR2, Calibrated')
+    seq_list <- seq_along(Thickness_list_MBR2_Calibrated)
+    names(seq_list) <- names(Thickness_list_MBR2_Calibrated[seq_list])
+    # 
+    print(Sys.time())
+    print(names(seq_list))
+    para_socket_cl <- makeCluster(parallel::detectCores())
+    registerDoParallel(para_socket_cl)
+    # 
+    invisible(
+        llply(
+            .data = seq_list,
+            .fun = function(
+                i, 
+                Plot_Thickness, 
+                Thickness_list, 
+                df_hyper
+            ){
+                Plot_Thickness(
+                    Thickness = Thickness_list[[i]], 
+                    scale_range = NULL,
+                    Fig_Title = df_hyper$seq_Fig_Title[i],
+                    flag_plot = F,
+                    flag_save_plot = T,
+                    save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_2/Default_Calibrated/'
+                )
+            },
+            .parallel = T,
+            # .progress = 'time',
+            Plot_Thickness = Plot_Thickness,
+            Thickness_list = Thickness_list_MBR2_Calibrated,
             df_hyper = df_MBR2
         )
     )

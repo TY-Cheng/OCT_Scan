@@ -5,6 +5,7 @@ library(mgcv)
 library(EBImage)
 library(ggplot2)
 library(colorRamps)
+library(stringr)
 
 
 
@@ -33,9 +34,26 @@ df_MBR1 <- data.frame(
         rep(.999, 5),
         rep(.995, 3),
         rep(.999, 18)
-    )
+    ),
+    seq_mean_aim = c(
+        48.41, 73.01, 94.16, 127.06, 131.38, 
+        133.6, 139.16, 141.47, 129.87, 137.8, 144.39, 144.39, 164.19, 171.25, 
+        239.37, 220.3, 230.05, 230.23, 
+        176.18, 131.54, 107.82,
+        48.39, 39.67, 32.08,
+        41.85, 33.35, 38.77, 49.99, 54.45, 47.88, 33.69, 31.8, 37.57, 43.06, 40.99, 35.85, 31.02, 33.57, 39.21
+    ),
+    seq_sd_aim = c(
+        5.14, 9.68, 8.05, 10.53, 11.71,
+        12.08, 11.99, 15.49, 13.31, 14.39, 17.77, 17.77, 14.52, 16.79,
+        13.7, 8.73, 9.86, 11.89,
+        11.57, 10.46, 13.12,
+        11.81, 13.31, 13.4,
+        15.15, 10.27, 15.69, 13.2, 15.43, 14.79, 18.48, 14.23, 13.76, 16.5, 15.54, 19.99, 11.57, 13.72, 12.87
+    ),
+    stringsAsFactors = F
 )
-# 
+# df_MBR2 needs sorting and then add mean&sd aim.
 df_MBR2 <- data.frame(
     seq_Fig_Index = names(Img_list_MBR2),
     seq_Fig_Title = paste0(
@@ -45,11 +63,13 @@ df_MBR2 <- data.frame(
             rep('Reactor_3_Relaxation_Air_Scouring_', 11)
         ),
         c(
-            rep('Day_', 15), rep('Autopsy_', 3),
-            rep('Day_', 8), rep('Autopsy_', 3),
-            rep('Day_', 8), rep('Autopsy_', 3)
+            rep('Day_', 15), rep('Day_40_Autopsy_', 3),
+            rep('Day_', 8), rep('Day_40_Autopsy_', 3),
+            rep('Day_', 8), rep('Day_40_Autopsy_', 3)
         ),
-        stringi::stri_extract_last_regex(names(Img_list_MBR2), '(\\d)+')
+        stringr::str_pad(
+            stringi::stri_extract_last_regex(names(Img_list_MBR2), '(\\d)+'), 
+            width = 2, pad = '0')
     ),
     seq_Denoise_Type = c(
         rep(2,4), # 4
@@ -70,8 +90,13 @@ df_MBR2 <- data.frame(
     ),
     seq_Loess_Span = c(rep(.02, 40)),
     seq_Quantile_Min = c(rep(.005, 40)),
-    seq_Quantile_Max = c(rep(.998, 40))
+    seq_Quantile_Max = c(rep(.998, 40)),
+    stringsAsFactors = F
 )
+df_MBR2 <- df_MBR2[order(df_MBR2$seq_Fig_Title),] # sort according to fig title
+df_MBR2$seq_mean_aim <- c(17.45,48.93,58.04,70.69,80.1,86.88,92.81,98.5,105.59,130.98,139.27,191.94,226.54,280.36,281.91,281.91,278.47,290.83,16.25,41.26,47.04,38.28,37.49,47.15,51.44,46.87,46.87,54.47,66.58,27.31,19.85,33.26,30.93,56.72,53.05,60.67,40.62,40.62,53.37,58.95)
+df_MBR2$seq_sd_aim <- c(5.1,8.22,8.08,7.49,7.36,7.75,8.59,7.59,7.07,7.42,7.97,9.21,9,8.44,6.82,6.82,7.62,9.23,7.15,9.8,6.58,7.02,12.45,8.03,7.37,8.31,8.31,7.07,11.62,11.77,10.76,17.1,18.54,7.63,16.67,7.3,19.76,19.76,8.62,6.5)
+
 
 # Get_Thickness_2D_From_MAT -----------------------------------------------
 # Import secant from one single mat file
@@ -508,6 +533,16 @@ Plot_Thickness <- function(Thickness,
                         plot = p, width = 7)
     }
     return()
+}
+
+
+# Calibration of Thickness ------------------------------------------------
+Calibrate_Thickness <- function(Thickness_raw, mean_aim, sd_aim) {
+    Thickness <- Thickness_raw
+    Thickness <- scale(Thickness)
+    Thickness <- Thickness * sd_aim
+    Thickness <- Thickness + mean_aim
+    return(Thickness)
 }
 
 
