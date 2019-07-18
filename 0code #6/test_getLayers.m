@@ -8,7 +8,7 @@ params.membraneIntensity = 1;
 folder = '1';
 
 % select 1 to plot segmented images, or 0 not to plot
-params.isPlot = 0;
+params.isPlot = 1;
 
 % select 1 to crop images, or 0 for no cropping
 cropimages = 0;
@@ -42,7 +42,7 @@ for i = 1:numel(imagePath)
     tic
     try
         clearvars -except fileID filename  folderPath i imagePath  path
-        params.membraneIntensity = 1;   folder = '1';   params.isPlot = 0;
+        params.membraneIntensity = 1;   folder = '1';   params.isPlot = 1;
         yrange = []; xrange = [];
         %%
         % read in the image.
