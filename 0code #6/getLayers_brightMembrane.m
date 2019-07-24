@@ -19,16 +19,16 @@ end
     
     % resize the image if 1st value set to 'true',
     % with the second value to be the scale.
-    params0.isResize = [true 0.5];     
-        
+    params0.isResize = [true 0.5];
+    
     % constants used for defining the region for segmentation of individual layer
     params0.roughILMandISOS.shrinkScale = 0.5;
-    params0.roughILMandISOS.offsets = -1:1;  
+    params0.roughILMandISOS.offsets = -1:1;
     params0.membraneIntensity = 1;
-    params0.ilm_0 = 8;
+    params0.ilm_0 = 50; % 8
     params0.ilm_1 = 100;
-    params0.isos_0 = 2;
-    params0.isos_1 = 50;
+    params0.isos_0 = 1; % 2
+    params0.isos_1 = 10; % 50
     params0.rpe_0 = 0.1;
     params0.rpe_1 = 0.01;
     params0.inlopl_0 = 0.1; %   0.4;% 0.1
@@ -37,8 +37,8 @@ end
     params0.nflgcl_1 = 0.1; %   0.1;  0.3
     params0.iplinl_0 = 0.6;
     params0.iplinl_1 = 0.2;
-    params0.oplonl_0 = 0.05;%4;
-    params0.oplonl_1 = 0.5;%4;    
+    params0.oplonl_0 = 0.05; % 4;
+    params0.oplonl_1 = 0.5; % 4;    
         
     % parameters for ploting
     params0.txtOffset = -7;
