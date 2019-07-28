@@ -1,6 +1,43 @@
-memory.limit()
+# memory.limit()
+
+img <- readImage(system.file("images", "sample-color.png", package = "EBImage"))
+display(img, method = 'browser')
+display(img, method = 'raster')
+dev.print(jpeg, filename = 'parrots.tif' , width = dim(img)[1], height = dim(img)[2])
+file.info('parrots.tif')
+# install.packages("image.ContourDetector", repos = "https://bnosac.github.io/drat")
 
 library(EBImage)
+library(image.LineSegmentDetector)
+library(pixmap)
+image <- read.pnm(file = system.file("extdata", "le-piree.pgm", package="image.LineSegmentDetector"), cellres = 1)
+plot(image)
+linesegments <- image_line_segment_detector(image@grey * 255)
+plot(linesegments)
+display(linesegments)
+
+
+plot(image_contour_detector(nmask@.Data * 255))
+
+
+segmented <- image_line_segment_detector(nmask@.Data * 255)
+plot(segmented, col = 'red')
+
+plot(image_line_segment_detector(img.sample@.Data * 255), col = 'red')
+img1 <- image_read(img.sample)
+plot(image_denoise_nlmeans(img1, sigma = 5))
+
+
+
+
+library(magick)
+library(image.DenoiseNLMeans)
+f <- system.file(package = "image.DenoiseNLMeans", "extdata", "img_garden.png")
+img <- image_read(f)
+img <- image_noise(img, noisetype = "Poisson")
+img
+denoised <- image_denoise_nlmeans(img, sigma = 40)
+denoised
 
 
 
