@@ -1,3 +1,5 @@
+memory.limit()
+
 library(EBImage)
 
 
