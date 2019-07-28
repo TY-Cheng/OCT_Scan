@@ -26,6 +26,11 @@ edge.detect(x, thresh1=1, thresh2=15, noise="gaussian", noise.s=3, method="Canny
 library("EBImage")
 
 img.sample <- readImage(
+  "/Users/chengt/Documents/OCT_Scan/14.tif"
+)
+
+
+img.sample <- readImage(
     "/Volumes/Seagate_Backup/OCT_Scan_PreProcessing/MBR_1_2D/2D for terry/10.tif"
 )
 
