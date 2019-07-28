@@ -1,3 +1,7 @@
+library(EBImage)
+
+
+
 ## Not run:
 data(camphora)
 data(cryptomeria)
@@ -31,12 +35,12 @@ img.sample <- readImage(
 
 
 img.sample <- readImage(
-    "/Volumes/Seagate_Backup/OCT_Scan_PreProcessing/MBR_1_2D/2D for terry/10.tif"
+  "/Volumes/Seagate_Backup/OCT_Scan_PreProcessing/MBR_1_2D/2D for terry/10.tif"
 )
 
 
 img.sample <- readImage(
-    "/Volumes/Seagate_Backup/OCT_Scan_PreProcessing/MBR_1_2D/2D for terry/130.tif"
+  "/Volumes/Seagate_Backup/OCT_Scan_PreProcessing/MBR_1_2D/2D for terry/130.tif"
 )
 display(img.sample)
 img.median <- medianFilter(img.sample, 1)
@@ -46,8 +50,8 @@ fhi <- matrix(1, nrow = 3, ncol = 3)
 fhi[2, 2] <- -7.5
 display(filter2(x = img.median, filter = fhi))
 image(rot90c(edge.detect(
-    img.median,thresh1=1, thresh2=15, noise="gaussian", noise.s=3,
-    method="Sobel")
+  img.median,thresh1=1, thresh2=15, noise="gaussian", noise.s=3,
+  method="Sobel")
 ), col=gray(c(0:255)/255), main="Sobel", useRaster=TRUE, axes=FALSE, asp=1)
 
 # img.median <- img.median[]
@@ -61,13 +65,13 @@ ans <- edge.detect(img.median, method = 'Sobel')
 dim(ans) # 664, 156
 
 {
-    nmask = thresh(img.median, w=10, h=10, offset=0.01)
-    # nmask = opening(nmask, makeBrush(5, shape='disc'))
-    # nmask = opening(nmask, makeBrush(5, shape='box'))
-    nmask = opening(nmask, makeBrush(5, shape='diamond'))
-    nmask = fillHull(nmask)
-    nmask = bwlabel(nmask)
-    display(nmask, all = T)
+  nmask = thresh(img.median, w=10, h=10, offset=0.01)
+  # nmask = opening(nmask, makeBrush(5, shape='disc'))
+  # nmask = opening(nmask, makeBrush(5, shape='box'))
+  nmask = opening(nmask, makeBrush(5, shape='diamond'))
+  nmask = fillHull(nmask)
+  nmask = bwlabel(nmask)
+  display(nmask, all = T)
 }
 ctmask = opening(img.median>.7, makeBrush(5, shape='disc'))
 cmask = propagate(img.median, seeds=nmask, mask=ctmask)
@@ -95,7 +99,7 @@ otsu(nuc)
 threshold = otsu(nuc)
 threshold
 nuc_th <- combine(
-    mapply(function(frame, th) frame > th, getFrames(nuc), threshold, SIMPLIFY=FALSE) 
+  mapply(function(frame, th) frame > th, getFrames(nuc), threshold, SIMPLIFY=FALSE) 
 )
 display(nuc_th, all=TRUE)
 
