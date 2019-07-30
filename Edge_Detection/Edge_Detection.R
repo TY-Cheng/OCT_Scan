@@ -3,8 +3,16 @@
 img <- readImage(system.file("images", "sample-color.png", package = "EBImage"))
 display(img, method = 'browser')
 display(img, method = 'raster')
+# In & Out
 dev.print(jpeg, filename = 'parrots.tif' , width = dim(img)[1], height = dim(img)[2])
 file.info('parrots.tif')
+
+
+nuc = readImage(system.file("images", "nuclei.tif", package="EBImage"))
+display(nuc, method = "raster", all = TRUE)
+
+
+
 # install.packages("image.ContourDetector", repos = "https://bnosac.github.io/drat")
 
 library(EBImage)
@@ -67,11 +75,14 @@ edge.detect(x, thresh1=1, thresh2=15, noise="gaussian", noise.s=3, method="Canny
 
 
 library("EBImage")
-
+# library(imager)
 img.sample <- readImage(
   "/Users/chengt/Documents/OCT_Scan/14.tif"
 )
 
+img.sample <- readImage(
+  "/Users/chengt/Documents/OCT_Scan/Edge_Detection/Day_32_04.04_Edited_0333.tif"
+)
 
 img.sample <- readImage(
   "/Volumes/Seagate_Backup/OCT_Scan_PreProcessing/MBR_1_2D/2D for terry/10.tif"
@@ -87,16 +98,22 @@ display(img.median)
 
 fhi <- matrix(1, nrow = 3, ncol = 3)
 fhi[2, 2] <- -7.5
-display(filter2(x = img.median, filter = fhi))
-image(rot90c(edge.detect(
-  img.median,thresh1=1, thresh2=15, noise="gaussian", noise.s=3,
-  method="Sobel")
-), col=gray(c(0:255)/255), main="Sobel", useRaster=TRUE, axes=FALSE, asp=1)
+plot(filter2(x = img.median, filter = fhi))
 
+library(wvtool)
 # img.median <- img.median[]
 attr(img.median, 'bits.per.sample') <- 32
 attr(img.median, 'samples.per.pixel') <- 1
-img.median <- resize(img.median, w = 1000)
+
+image(
+  # rot90c(
+    edge.detect(
+      img.median,thresh1=1, thresh2=15, noise="gaussian", noise.s=3,
+      method="Sobel"),
+  # ),
+  col=gray(c(0:255)/255), main="Sobel", useRaster=TRUE, axes=FALSE, asp=1)
+
+img.median <- EBImage::resize(img.median, w = 1000)
 image(edge.detect(img.median))
 image(edge.detect(img.median, method = 'Sobel'))
 ans <- edge.detect(img.median, method = 'Sobel')

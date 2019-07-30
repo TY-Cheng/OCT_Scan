@@ -41,7 +41,9 @@ df_MBR1 <- data.frame(
         239.37, 220.3, 230.05, 230.23, 
         176.18, 131.54, 107.82,
         48.39, 39.67, 32.08,
-        41.85, 33.35, 38.77, 49.99, 54.45, 47.88, 33.69, 31.8, 37.57, 43.06, 40.99, 35.85, 31.02, 33.57, 39.21
+        41.85, 33.35, 38.77, 49.99, 54.45, 
+        47.88, 33.69, 31.8, 37.57, 43.06, 
+        40.99, 35.85, 31.02, 33.57, 39.21
     ),
     seq_sd_aim = c(
         5.14, 9.68, 8.05, 10.53, 11.71,
@@ -49,7 +51,9 @@ df_MBR1 <- data.frame(
         13.7, 8.73, 9.86, 11.89,
         11.57, 10.46, 13.12,
         11.81, 13.31, 13.4,
-        15.15, 10.27, 15.69, 13.2, 15.43, 14.79, 18.48, 14.23, 13.76, 16.5, 15.54, 19.99, 11.57, 13.72, 12.87
+        15.15, 10.27, 15.69, 13.2, 15.43, 
+        14.79, 18.48, 14.23, 13.76, 16.5, 
+        15.54, 19.99, 11.57, 13.72, 12.87
     ),
     stringsAsFactors = F
 )
@@ -94,8 +98,12 @@ df_MBR2 <- data.frame(
     stringsAsFactors = F
 )
 df_MBR2 <- df_MBR2[order(df_MBR2$seq_Fig_Title),] # sort according to fig title
-df_MBR2$seq_mean_aim <- c(17.45,48.93,58.04,70.69,80.1,86.88,92.81,98.5,105.59,130.98,139.27,191.94,226.54,280.36,281.91,281.91,278.47,290.83,16.25,41.26,47.04,38.28,37.49,47.15,51.44,46.87,46.87,54.47,66.58,27.31,19.85,33.26,30.93,56.72,53.05,60.67,40.62,40.62,53.37,58.95)
-df_MBR2$seq_sd_aim <- c(5.1,8.22,8.08,7.49,7.36,7.75,8.59,7.59,7.07,7.42,7.97,9.21,9,8.44,6.82,6.82,7.62,9.23,7.15,9.8,6.58,7.02,12.45,8.03,7.37,8.31,8.31,7.07,11.62,11.77,10.76,17.1,18.54,7.63,16.67,7.3,19.76,19.76,8.62,6.5)
+df_MBR2$seq_mean_aim <- c(
+    17.45,48.93,58.04,70.69,80.1,86.88,92.81,98.5,105.59,130.98,139.27,191.94,226.54,280.36,281.91,281.91,278.47,290.83,16.25,41.26,47.04,38.28,37.49,47.15,51.44,46.87,46.87,54.47,66.58,27.31,19.85,33.26,30.93,56.72,53.05,60.67,40.62,40.62,53.37,58.95
+)
+df_MBR2$seq_sd_aim <- c(
+    5.1,8.22,8.08,7.49,7.36,7.75,8.59,7.59,7.07,7.42,7.97,9.21,9,8.44,6.82,6.82,7.62,9.23,7.15,9.8,6.58,7.02,12.45,8.03,7.37,8.31,8.31,7.07,11.62,11.77,10.76,17.1,18.54,7.63,16.67,7.3,19.76,19.76,8.62,6.5
+)
 
 
 # Get_Thickness_2D_From_MAT -----------------------------------------------
@@ -273,7 +281,8 @@ Impute_Filter_Image_from_Matrix <- function(
         # rm(Thickness_wo_Extreme, maximum, minimum)
     }
     # Specials
-    # quantile(Img_list_MBR1$Day_49_21.04_, na.rm = T, probs = seq(from = 0 , to = 1, by = .01))
+    # quantile(Img_list_MBR1$Day_49_21.04_, na.rm = T, 
+    # probs = seq(from = 0 , to = 1, by = .01))
     if (Fig_Title %in% 
         c(
             'Day_32_04.04_Relaxation_1', 'Day_35_07.04_Relaxation_2',
@@ -307,7 +316,7 @@ Impute_Filter_Image_from_Matrix <- function(
         minimum <- max(
             quantile(Thickness, probs = 5/10^2, na.rm = T), 
             0)
-        maximum <- quantile(Thickness, probs = 1-1/10^3, na.rm = T)
+        maximum <- quantile(Thickness, probs = 1-1/10^5, na.rm = T)
         Thickness_wo_Extreme[Thickness_wo_Extreme < minimum] <- NA
         Thickness_wo_Extreme[Thickness_wo_Extreme > maximum] <- NA
         Thickness <- Thickness_wo_Extreme
@@ -474,6 +483,26 @@ Plot_Thickness <- function(Thickness,
                            flag_save_plot = T,
                            save_folder = '') {
     print(paste0('Processing ', Fig_Title, '...'))
+    # 16 "Look Up Table" or LUT (a.k.a. palette, color table)
+    lut_16 <- matrix(
+        data = c(0,0,0,
+                 1,1,171,
+                 1,1,224,
+                 0,110,255,
+                 1,171,254,
+                 1,224,254,
+                 1,254,1,
+                 190,255,0,
+                 255,255,0,
+                 255,224,0,
+                 255,141,0,
+                 250,94,0,
+                 245,0,0,
+                 245,0,172,
+                 222,180,222),
+        ncol = 3, byrow = T
+    )
+    lut_16 <- rgb(lut_16, maxColorValue = 255)
     # ReExpand the Grid to plot 666*666 as 4 mm * 4 mm
     Img_3D_grid <- expand.grid(
         X = seq_len(NCOL(Thickness)),
@@ -505,13 +534,21 @@ Plot_Thickness <- function(Thickness,
     if (is.null(scale_range)) {
         p <- p + 
             ggplot2::scale_fill_gradientn(
-                colours = colorRamps::matlab.like(300)
+                colours = lut_16,
+                # colours = colorRamps::matlab.like(300)
+                guide = ggplot2::guide_colourbar(
+                    raster = T, frame.colour = "black", frame.linewidth = 1
+                )
             )
     }else if (length(scale_range) == 2) {
         p <- p +
             ggplot2::scale_fill_gradientn(
                 limits = c(scale_range[1], scale_range[2]),
-                colours = colorRamps::matlab.like(300)
+                colours = lut_16,
+                # colours = colorRamps::matlab.like(300)
+                guide = ggplot2::guide_colourbar(
+                    raster = T, frame.colour = "black", frame.linewidth = 1
+                )
             )
     }else if (length(scale_range) == 1) {
         p <- p +
@@ -521,7 +558,11 @@ Plot_Thickness <- function(Thickness,
                     max(round(min(Img_3D_grid$Z) - 20, digits = -1), 0) + 
                         scale_range
                 ),
-                colours = colorRamps::matlab.like(300)
+                colours = lut_16,
+                # colours = colorRamps::matlab.like(300)
+                guide = ggplot2::guide_colourbar(
+                    raster = T, frame.colour = "black", frame.linewidth = 1
+                )
             )
     }
     # 
