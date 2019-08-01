@@ -71,7 +71,8 @@ image(rot90c(edge.detect(img.c2,thresh1=1, thresh2=15, noise="gaussian", noise.s
                          method="Sobel")),col=gray(c(0:255)/255), main="Sobel", useRaster=TRUE, axes=FALSE, asp=1)
 ## End(Not run)
 
-edge.detect(x, thresh1=1, thresh2=15, noise="gaussian", noise.s=3, method="Canny")
+edge.detect(cimg2im(img), 
+            thresh1=1, thresh2=15, noise="gaussian", noise.s=3, method="Canny")
 
 
 library("EBImage")
@@ -108,7 +109,8 @@ attr(img.median, 'samples.per.pixel') <- 1
 image(
   # rot90c(
     edge.detect(
-      img.median,thresh1=1, thresh2=15, noise="gaussian", noise.s=3,
+      img.median,
+      thresh1=1, thresh2=15, noise="gaussian", noise.s=3,
       method="Sobel"),
   # ),
   col=gray(c(0:255)/255), main="Sobel", useRaster=TRUE, axes=FALSE, asp=1)
@@ -179,3 +181,10 @@ plot(colMeans(nmask[90:100,]))
 plot(nmask)
 image(nmask)
 image(ctmask)
+
+
+
+
+
+renorm()
+# load.dir()
