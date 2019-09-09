@@ -7,6 +7,11 @@ library(doParallel)
 
 detach('package:EBImage', unload = T)
 
+# can read them directly; must be in the local disk
+list_all <- EBImage::readImage('~/Documents/OCT_Scan/Flowcell/Resized_Raw/Resized_26_.tif')
+
+
+
 img.sample <- readImage(
     "/Users/chengt/Documents/OCT_Scan/Edge_Detection/Day_32_04.04_Edited_0333.tif"
 )
