@@ -1,16 +1,17 @@
-
 library(EBImage)
 library(plyr)
 library(dplyr)
 library(doParallel)
-
-
-detach('package:EBImage', unload = T)
+# detach('package:EBImage', unload = T)
 
 # can read them directly; must be in the local disk
+function() {
+    
+}
+
 list_all <- EBImage::readImage('~/Documents/OCT_Scan/Flowcell/Resized_Raw/Resized_26_.tif')
 
-
+img.sample <- list_all[,,1] %>% resize(w = 1000, h = 400)
 
 img.sample <- readImage(
     "/Users/chengt/Documents/OCT_Scan/Edge_Detection/Day_32_04.04_Edited_0333.tif"
@@ -22,13 +23,14 @@ img.sample <- readImage(
     "/Volumes/Seagate_Backup/OCT_Scan_PreProcessing/MBR_1_2D/2D for terry/130.tif"
 )
 plot(img.sample)
+
 img.median <- medianFilter(x = img.sample, size = 2)
 plot(img.median)
 
 Get_BioFilmBoundary <- function(
     image = NULL,
     fname = '/Users/chengt/Documents/OCT_Scan/Edge_Detection/Day_32_04.04_Edited_0333.tif',
-    size_median_filter = 1,
+    size_median_filter = 2,
     thresh_offset = .03,
     size_movingaveragemask_filter = 50,
     frac_lowess_top_min = 1/10,
@@ -41,8 +43,11 @@ Get_BioFilmBoundary <- function(
     } else {img_raw <- image}
     img_temp <- img_raw
     img_temp <- waveslim::denoise.modwt.2d(img_temp)
+    img_temp <- medianFilter(x = img_temp, size = size_median_filter)
     img_temp <- waveslim::denoise.modwt.2d(img_temp)
-    img_temp <- medianFilter(x = img_temp, size = 2)
+    img_temp <- medianFilter(x = img_temp, size = size_median_filter)
+    img_temp <- waveslim::denoise.modwt.2d(img_temp)
+    img_temp <- medianFilter(x = img_temp, size = size_median_filter)
     # img_temp <- medianFilter(x = img_temp, size = 10)
     img_temp <- as.Image(img_temp)
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
