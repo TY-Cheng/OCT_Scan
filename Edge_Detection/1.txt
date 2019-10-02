@@ -1,0 +1,4 @@
+image,layer,mean,sd,roughness_Ra,roughness_Ra1
+Day_32_04.04_Edited_0333.tif,ilm - isos,11.89594,7.77077,6.04283,0.50797
+image,layer,mean,sd,roughness_Ra,roughness_Ra1
+fig_octraw2.tif,ilm - isos,111.64114,8.13812,6.53448,0.05853

@@ -130,6 +130,15 @@ Get_BioFilmBoundary(
     fname = "/Users/chengt/Documents/OCT_Scan/Edge_Detection/Day_32_04.04_Edited_0333.tif",
     flag_plot = T, thresh_offset = .03, size_movingaveragemask_filter = 100
 )
+
+Get_BioFilmBoundary(
+    fname = "/Users/chengt/Documents/OCT_Scan/Edge_Detection/fig_octraw2.tif",
+    size_median_filter = 2, 
+    frac_lowess_top_min = 1/50, frac_lowess_bottom_max = 1/8,
+    thresh_offset = .03, size_movingaveragemask_filter = 23,
+    flag_plot = T
+)
+
 Get_BioFilmBoundary(
     fname = "/Volumes/Seagate_Backup/OCT_Scan_PreProcessing/MBR_1_2D/2D for terry/130.tif",
     flag_plot = T, thresh_offset = .04, size_movingaveragemask_filter = 100

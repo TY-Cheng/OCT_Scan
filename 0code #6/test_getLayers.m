@@ -42,7 +42,7 @@ for i = 1:numel(imagePath)
     tic
     try
         clearvars -except fileID filename  folderPath i imagePath  path
-        params.membraneIntensity = 1;   folder = '1';   params.isPlot = 0;
+        params.membraneIntensity = 1;   folder = '1';   params.isPlot = 1;
         yrange = []; xrange = [];
         %%
         % read in the image.
