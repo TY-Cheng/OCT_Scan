@@ -277,7 +277,7 @@ Thickness_list_MBR1_Calibrated$Day_43_15.04_ <- Calibrate_Thickness(
 )
 Plot_Thickness(
     Thickness = Thickness_list_MBR1_Calibrated$Day_43_15.04_,
-    scale_range = NULL,
+    scale_range = 100,
     Fig_Title = 'Day_43_15.04_Relaxation_2',
     flag_plot = F, flag_save_plot = T,
     save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Default_Calibrated/'
@@ -307,7 +307,7 @@ if (1) {
             ){
                 Plot_Thickness(
                     Thickness = Thickness_list[[i]], 
-                    scale_range = NULL,
+                    scale_range = 100,
                     Fig_Title = df_hyper$seq_Fig_Title[i],
                     flag_plot = F,
                     flag_save_plot = T,
@@ -333,7 +333,7 @@ if (1) {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 # str(Thickness_list_MBR2)
-if (1) {
+if (0) {
     tictoc::tic('Calibrating, MBR2')
     seq_list <- seq_along(Thickness_list_MBR2)
     names(seq_list) <- names(Thickness_list_MBR2[seq_list])
@@ -397,7 +397,7 @@ if (1) {
             ){
                 Plot_Thickness(
                     Thickness = Thickness_list[[i]], 
-                    scale_range = NULL,
+                    scale_range = 100,
                     Fig_Title = df_hyper$seq_Fig_Title[i],
                     flag_plot = F,
                     flag_save_plot = T,
