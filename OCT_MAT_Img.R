@@ -83,7 +83,7 @@ if (0) {
     tictoc::toc()
 }
 # GGplot llply version, MBR1
-if (0) {
+if (1) {
     tictoc::tic('Plotting, MBR1')
     seq_list <- seq_along(Thickness_list_MBR1)
     names(seq_list) <- names(Thickness_list_MBR1[seq_list])
@@ -174,7 +174,7 @@ if (0) {
     tictoc::toc()
 }
 # GGplot llply version, MBR2
-if (0) {
+if (1) {
     tictoc::tic('Plotting, MBR2')
     seq_list <- seq_along(Thickness_list_MBR2)
     names(seq_list) <- names(Thickness_list_MBR2[seq_list])
@@ -266,6 +266,25 @@ if (0) {
     print(Sys.time())
     tictoc::toc()
 }
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# Day 43
+Thickness_list_MBR1_Calibrated$Day_43_15.04_ <- Calibrate_Thickness(
+    Thickness_raw = Thickness_list_MBR1$Day_44_16.04_, 
+    mean_aim = 230.41, 
+    sd_aim = 14.34
+)
+Plot_Thickness(
+    Thickness = Thickness_list_MBR1_Calibrated$Day_43_15.04_,
+    scale_range = NULL,
+    Fig_Title = 'Day_43_15.04_Relaxation_2',
+    flag_plot = F, flag_save_plot = T,
+    save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Default_Calibrated/'
+)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
 # GGplot llply version, MBR1
 if (1) {
     tictoc::tic('Plotting, MBR1, Calibrated')
@@ -314,7 +333,7 @@ if (1) {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 # str(Thickness_list_MBR2)
-if (0) {
+if (1) {
     tictoc::tic('Calibrating, MBR2')
     seq_list <- seq_along(Thickness_list_MBR2)
     names(seq_list) <- names(Thickness_list_MBR2[seq_list])

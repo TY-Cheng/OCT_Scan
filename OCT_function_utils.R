@@ -574,7 +574,7 @@ Plot_Thickness <- function(Thickness,
     if (flag_save_plot) {
         cat('Saving', paste0(save_folder, Fig_Title, '.png'), '...\n')
         ggplot2::ggsave(filename = paste0(save_folder, Fig_Title, '.png'), 
-                        plot = p, width = 7)
+                        plot = p, width = 7, height = 6.5)
     }
     return()
 }
@@ -583,7 +583,7 @@ Plot_Thickness <- function(Thickness,
 # Calibration of Thickness ------------------------------------------------
 Calibrate_Thickness <- function(Thickness_raw, mean_aim, sd_aim) {
     Thickness <- Thickness_raw
-    Thickness <- scale(Thickness)
+    Thickness <- (Thickness-mean(Thickness))/sd(Thickness)
     Thickness <- Thickness * sd_aim
     Thickness <- Thickness + mean_aim
     return(Thickness)
