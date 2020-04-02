@@ -166,7 +166,9 @@ Get_Thickness_2D_From_MAT <- function(MATfname) {
 # splice 2D thickness_row into one 3D matrix 'Img_3D'
 Get_Thickness_3D_From_MAT <- function(
     Working_Directory,
-    Rootfolder = Rootfolder
+    Rootfolder = Rootfolder,
+    n_row = 666,
+    n_col = 1970
 ) {
     print(Working_Directory)
     setwd(Rootfolder)
@@ -182,7 +184,7 @@ Get_Thickness_3D_From_MAT <- function(
         fun = Get_Thickness_2D_From_MAT
     )
     stopCluster(para_socket_cl)
-    Img_3D <- matrix(NA, nrow = 666, ncol = 1970)
+    Img_3D <- matrix(NA, nrow = n_row, ncol = n_col)
     invisible(lapply(
         X = Img_2D_list,
         FUN = function(rownum_thicknessrow){
@@ -191,7 +193,7 @@ Get_Thickness_3D_From_MAT <- function(
                 rownum_thicknessrow$thickness_row
         }
     ))
-    Img_3D <- Img_3D[, !colSums(is.na(Img_3D))==666]
+    Img_3D <- Img_3D[, !colSums(is.na(Img_3D))==n_row]
     return(Img_3D)
 }
 
@@ -221,7 +223,7 @@ Remove_Consecutive_NA <- function(Thickness) {
 }
 
 # Process matrix to image -------------------------------------------------
-# from 987 to 666
+# from 987 to n_row (666)
 Impute_Filter_Image_from_Matrix <- function(
     Img_3D, 
     Fig_Title,
@@ -230,7 +232,8 @@ Impute_Filter_Image_from_Matrix <- function(
     flag_ex_extreme_value = TRUE,
     loess_span = .02,
     quantiles = c(.027, .97),
-    Remove_Consecutive_NA = Remove_Consecutive_NA
+    Remove_Consecutive_NA = Remove_Consecutive_NA,
+    n_row = 666
 ) {
     # print(paste0('Processing ', Fig_Title, '...'))
     Thickness <- Img_3D
@@ -244,26 +247,26 @@ Impute_Filter_Image_from_Matrix <- function(
     if (denoise_type %in% 2:3) {
         fit_ref <- rowMeans(Thickness)
         fit_loess <- loess(y~x, 
-                           data.frame(x = 1:666, y = fit_ref),
+                           data.frame(x = 1:n_row, y = fit_ref),
                            na.action = na.omit,
                            span = .6)
         threshold_row <- 
-            mean(Thickness, na.rm = T) + predict(fit_loess, 1:666) - 2 * fit_ref
+            mean(Thickness, na.rm = T) + predict(fit_loess, 1:n_row) - 2 * fit_ref
         Thickness[fit_ref < threshold_row, ] <- NA
-        # threshold_row <- predict(fit_loess, 1:666) + fit_ref
+        # threshold_row <- predict(fit_loess, 1:n_row) + fit_ref
         # Thickness[fit_ref > threshold_row, ] <- NA
         # 
         fit_ref <- rowMeans(Thickness)
         fit_loess <- loess(y~x, 
-                           data.frame(x = 1:666, y = fit_ref),
+                           data.frame(x = 1:n_row, y = fit_ref),
                            na.action = na.omit,
                            span = 1/2)
         threshold_row <- 
             .6 * mean(Thickness, na.rm = T) + 
-            .4 * predict(fit_loess, 1:666) - 
+            .4 * predict(fit_loess, 1:n_row) - 
             sd(fit_ref, na.rm = T) * 1.732
         Thickness[fit_ref < threshold_row, ] <- NA
-        threshold_row <- predict(fit_loess, 1:666) + sd(fit_ref, na.rm = T) * sqrt(5)
+        threshold_row <- predict(fit_loess, 1:n_row) + sd(fit_ref, na.rm = T) * sqrt(5)
         Thickness[fit_ref > threshold_row, ] <- NA
     }
     # rm too much NA
@@ -483,6 +486,8 @@ Plot_Thickness <- function(Thickness,
                            scale_range = 60,
                            Fig_Title,
                            flag_plot = F,
+                           x_in_mm = 4,
+                           y_in_mm = 4,
                            flag_save_plot = T,
                            save_folder = '') {
     print(paste0('Processing ', Fig_Title, '...'))
@@ -512,8 +517,8 @@ Plot_Thickness <- function(Thickness,
         Y = seq_len(NROW(Thickness))
     )
     Img_3D_grid$Z <- c(Thickness)
-    Img_3D_grid$X <- Img_3D_grid$X / 666 * 4
-    Img_3D_grid$Y <- Img_3D_grid$Y / 666 * 4
+    Img_3D_grid$X <- Img_3D_grid$X / 666 * x_in_mm
+    Img_3D_grid$Y <- Img_3D_grid$Y / 666 * y_in_mm
     # Levelplot with ggplot2
     p <- ggplot2::ggplot(Img_3D_grid, ggplot2::aes(x = X, y = Y, z = Z)) +
         ggplot2::geom_raster(ggplot2::aes(fill = Z)) +

@@ -1,8 +1,0 @@
-image,layer,mean,sd,roughness_Ra,roughness_Ra1
-image,layer,mean,sd,roughness_Ra,roughness_Ra1
-image,layer,mean,sd,roughness_Ra,roughness_Ra1
-Day_42_Resized_0011.tif,ilm - isos,40.86701,2.15560,1.69560,0.04149
-image,layer,mean,sd,roughness_Ra,roughness_Ra1
-Day_42_Resized_0336.tif,ilm - isos,22.74061,13.46580,11.54609,0.50773
-image,layer,mean,sd,roughness_Ra,roughness_Ra1
-image,layer,mean,sd,roughness_Ra,roughness_Ra1
