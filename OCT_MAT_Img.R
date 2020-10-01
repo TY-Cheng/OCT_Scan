@@ -278,7 +278,8 @@ Thickness_list_MBR1_Calibrated$Day_43_15.04_ <- Calibrate_Thickness(
 )
 Plot_Thickness(
     Thickness = Thickness_list_MBR1_Calibrated$Day_43_15.04_,
-    scale_range = 100,
+    # scale_range = 130,
+    scale_range = NA,
     Fig_Title = 'Day_43_15.04_Relaxation_2',
     flag_plot = F, flag_save_plot = T,
     save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Default_Calibrated/'
@@ -308,7 +309,8 @@ if (1) {
             ){
                 Plot_Thickness(
                     Thickness = Thickness_list[[i]], 
-                    scale_range = 100,
+                    # scale_range = 130,
+                    scale_range = NA,
                     Fig_Title = df_hyper$seq_Fig_Title[i],
                     flag_plot = F,
                     flag_save_plot = T,
