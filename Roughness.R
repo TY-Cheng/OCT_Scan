@@ -102,6 +102,7 @@ if (1) {
     #     )
     
     df_MaternCovEstimate_MBR1 <- df_MaternCovEstimate
+    rownames(df_MaternCovEstimate_MBR1) <- df_MaternCovEstimate_MBR1$seq_Fig_Title
     # df_MaternCovEstimate_MBR1_Calibrated <- df_MaternCovEstimate
     
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
@@ -116,13 +117,34 @@ if (0) {
     temp_df <- llply(
         .data = temp_seq, .progress = 'time', .parallel = F, 
         .fun = function(iter_name) {
-            iter_result <- c(Thickness_list_MBR1[[iter_name]])
-            iter_result <- psych::describe(iter_result, quant = c(.25, .75))
+            iter_seq <- c(Thickness_list_MBR1[[iter_name]])
+            iter_result <- psych::describe(iter_seq, quant = c(.25, .75)) %>% 
+                data.frame()
             iter_result$seq_Fig_Index <- iter_name
-            rownames(iter_result) <- iter_name
+            iter_result$roughness_absolute <- mean(abs(iter_seq - mean(iter_seq)))
+            iter_result$roughness_relative <- mean(abs(iter_seq - mean(iter_seq)) / 
+                                                       mean(iter_seq))
             return(iter_result)
         })
     temp_df <- Reduce('rbind', temp_df)
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    temp_df$seq_Fig_Title <- 
+        paste0(
+            temp_df$seq_Fig_Index,
+            c(rep('Stable_Flux', 5),
+              rep('Relaxation_1', 9),
+              rep('Relaxation_2', 4), # notice we add one Day 43
+              rep('Air_Scouring', 3),
+              rep('Relaxation_Air_Scouring', 3),
+              rep('Autopsy', 15))
+        )
+    rownames(temp_df) <- temp_df$seq_Fig_Title
+    
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    cbind(df_MaternCovEstimate_MBR1, temp_df)
+    df_result_roughness <- clipr::read_clip_tbl()
+    
+    
 }
 
 
