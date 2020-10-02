@@ -109,7 +109,8 @@ if (1) {
                     Fig_Title = df_hyper$seq_Fig_Title[i],
                     flag_plot = F,
                     flag_save_plot = T,
-                    save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Default/'
+                    # save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Default/'
+                    save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/new/'
                 )
             },
             .parallel = T,
@@ -284,6 +285,8 @@ Plot_Thickness(
     flag_plot = F, flag_save_plot = T,
     save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Default_Calibrated/'
 )
+
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
@@ -419,4 +422,64 @@ if (1) {
     stopCluster(para_socket_cl)
     print(Sys.time())
     tictoc::toc()
+}
+
+
+
+
+
+
+# Thesis plot -------------------------------------------------------------
+
+
+if (1) {
+    
+    # fig_oct_Day_21_24_03_Stable_Flux
+    Plot_Thickness(
+        Thickness = Thickness_list_MBR1$Day_21_24.03_,
+        # scale_range = 130,
+        scale_range = c(55, 80),
+        Fig_Title = 'Day_21_24_03_Stable_Flux',
+        flag_plot = T, flag_save_plot = T,
+        save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Thesis_Figure/'
+    )
+    # fig_oct_Day_27_30_03_Relaxation_1
+    Plot_Thickness(
+        Thickness = Thickness_list_MBR1$Day_27_30.03_,
+        # scale_range = 130,
+        scale_range = c(45, 90),
+        Fig_Title = 'Day_27_30_03_Relaxation_1',
+        flag_plot = T, flag_save_plot = T,
+        save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Thesis_Figure/'
+    )
+    # Day_44_16.04_ , day 43
+    Plot_Thickness(
+        Thickness = 
+            Calibrate_Thickness(Thickness_raw = Thickness_list_MBR1$Day_44_16.04_, 
+                                mean_aim = 46.002, sd_aim = 4.408),
+        # scale_range = 130,
+        scale_range = c(35, 60),
+        Fig_Title = 'Day_43_15_04_Relaxation_2',
+        flag_plot = T, flag_save_plot = T,
+        save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Thesis_Figure/'
+    )
+    # fig_oct_Day_46_18_04_Air_Scouring
+    Plot_Thickness(
+        Thickness = Thickness_list_MBR1$Day_46_18.04_,
+        scale_range = NULL,
+        # scale_range = c(20, 35),
+        Fig_Title = 'Day_46_18_04_Air_Scouring',
+        flag_plot = T, flag_save_plot = T,
+        save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Thesis_Figure/'
+    )
+    # fig_oct_Day_56_28_04_Relaxation_Air_Scouring
+    Plot_Thickness(
+        Thickness = Thickness_list_MBR1$Day_56_28.04_,
+        # scale_range = 130,
+        scale_range = c(5, 30),
+        Fig_Title = 'Day_56_28_04_Relaxation_Air_Scouring',
+        flag_plot = T, flag_save_plot = T,
+        save_folder = '/Users/chengt/Documents/OCT_Scan/Img/MBR_1/Thesis_Figure/'
+    )
+    
 }

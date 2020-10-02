@@ -45,7 +45,7 @@ if (1) {
         # optimize(obj_fun_SSE, c(.1, 5))
         # # # # # #
         vgm_fit <- fit.variogram(object = vgm_sample, 
-                                 model = vgm('Mat', nugget = NA, kappa = NA), 
+                                 model = vgm(model = 'Mat', nugget = NA, kappa = NA), 
                                  fit.kappa = T)
         # plot(vgm_sample, vgm_fit)
         vgm_estimate <- as.data.frame(vgm_fit)
@@ -148,3 +148,63 @@ if (0) {
 }
 
 
+
+df_result_roughness %>% 
+    select(-note, -mad, -range.1, -Q0.25, -Q0.75) %>% 
+    select(-min, -max) %>% 
+    filter(!str_detect(rownames(.), 'Autopsy')) %>% 
+    xtable::xtable(caption = '', label = '') %>% 
+    xtable::print.xtable(include.rownames = F) %>% clipr::write_clip()
+
+
+df_result_roughness %>% 
+    select(Date, psill, range, kappa, 
+           roughness_absolute, roughness_relative, mean, sd) %>% 
+    filter(!str_detect(rownames(.), 'Autopsy')) %>% pairs()
+
+
+
+if(1){
+    # Pairs Panel --------------------------------------------------------------
+    source('~/Documents/R/Numerical_Ecology/Yasmeen/panelutils.R')
+    # Steady State Only, w/ wo condition 6
+    temp_df <- df_result_roughness %>% 
+        select(Date, psill, range, kappa, 
+               roughness_absolute, roughness_relative, mean, sd) %>% 
+        filter(!str_detect(rownames(.), 'Autopsy'))
+    colnames(temp_df) <- c('Date', 'c1', 'range', 'nu', 
+                           'R_absolute', 'R_relative', 'mean', 'sd')
+    
+    temp_seq <- factor(
+        c(rep('Stable_Flux', 5), 
+          rep('Relaxation_1', 9), 
+          rep('Relaxation_2', 4), 
+          rep('Air_Scouring', 3),
+          rep('Relaxation_Air_Scouring', 3)), 
+        levels = c('Stable_Flux', 'Relaxation_1', 'Relaxation_2', 
+                   'Air_Scouring', 'Relaxation_Air_Scouring'), ordered = T)
+    # my_cols <- PerformanceAnalytics::rich12equal[seq(from = 1, to = 12, by = 2)]
+    my_cols <- RColorBrewer::brewer.pal(n = nlevels(temp_seq), name = 'Set1')
+    # my_cols <- seq_along(unique(temp_seq))
+    my_cols <- my_cols[temp_seq]
+    # Sort Columns
+    
+    
+    
+    par(oma = rep(0,4), mar = rep(0,4), cex = 2)
+    
+    {
+        # svg(filename = 'pairs_panel_simplified.svg', width = 16, height = 12)
+        cairo_pdf(filename = 'fig_oct_pairs_panel.pdf', width = 12, height = 10)
+        pairs(x = temp_df,
+              upper.panel = panel.cor,
+              diag.panel = panel.hist,
+              lower.panel = panel.smooth,
+              cex.labels = 2, font.labels = 2, 
+              # cex.cor = 1.5,
+              cex = 1.4,
+              gap = .5, oma = rep(2,4))
+        dev.off()
+    }
+    
+}
